@@ -1,0 +1,13 @@
+---
+description: Vue 3 + TypeScript + Pinia 约定（本项目）
+globs: "**/*.{vue,ts}"
+alwaysApply: false
+---
+
+# Vue / Pinia / TS
+
+- 使用 `<script setup lang="ts">`；组件名与文件名一致；可组合逻辑放 `composables/`。
+- Pinia 使用 setup 风格 store：`ref` / `computed` + 具名返回；异步副作用保持显式。
+- 路由懒加载页面组件；导航后用 `scrollBehavior` 回到顶部（已在 `router/index.ts`）。
+- 避免在组件里直接读写 `localStorage`（除 store 内集中持久化外）。
+- 类型：领域模型集中在 `src/types/`；避免 `any`；公共工具放 `src/lib/`。

@@ -1,0 +1,19 @@
+---
+description: Anthropic frontend-design 要点 — 高辨识度 UI（摘要）
+globs: "**/*.{vue,css}"
+alwaysApply: false
+---
+
+# Frontend design（执行级摘要）
+
+本项目的视觉已按「暖色厨房手记」方向落地：Fraunces + Newsreader、陶土主色、橄榄绿辅色、纸张纹理与克制动效。
+
+在继续改 UI 时：
+
+- **先定调性**再写样式；避免默认「紫渐变 + 通用无衬线」套路。
+- **字体**：优先选有性格的组合（display + 正文字体）；避免 Inter / Roboto / Arial 作为主字体。
+- **颜色**：用 CSS 变量收敛；主色 + 清晰点缀色，避免平均灰阶。
+- **动效**：优先 CSS；一两处高影响入场/悬停即可，避免碎动效堆砌。
+- **版式**：可用不对称、留白或卡片层次；背景可用轻渐变/纹理增加氛围。
+
+完整原文可参考 Anthropic 仓库 `skills/frontend-design/SKILL.md`。
