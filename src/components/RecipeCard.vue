@@ -33,6 +33,9 @@ function planLabel(r: Recipe): string | null {
 
 <style scoped>
 .card {
+  container-type: inline-size;
+  container-name: recipe-card;
+  min-width: 0;
   border-radius: var(--radius-lg);
   overflow: hidden;
   background: var(--color-bg-elevated);
@@ -81,11 +84,12 @@ function planLabel(r: Recipe): string | null {
 
 .title {
   font-family: var(--font-display);
-  font-size: 1.25rem;
+  font-size: clamp(1rem, 2.8vw, 1.25rem);
   font-weight: 600;
   color: var(--color-ink);
   text-decoration: none;
   display: block;
+  overflow-wrap: anywhere;
 }
 
 .title:hover {
@@ -106,6 +110,31 @@ function planLabel(r: Recipe): string | null {
   border-radius: 999px;
   font-size: 0.78rem;
   font-family: var(--font-display);
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+@container recipe-card (max-width: 280px) {
+  .body {
+    padding: 0.65rem 0.7rem 0.75rem;
+  }
+
+  .meta {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.28rem;
+    font-size: 0.76rem;
+  }
+
+  .count {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .pill {
+    font-size: 0.68rem;
+    padding: 0.1rem 0.38rem;
+  }
 }
 
 .done {
@@ -121,10 +150,14 @@ function planLabel(r: Recipe): string | null {
 .plan {
   background: rgba(31, 20, 12, 0.06);
   color: var(--color-ink-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .count {
   color: var(--color-ink-muted);
   margin-left: auto;
+  flex-shrink: 0;
 }
 </style>

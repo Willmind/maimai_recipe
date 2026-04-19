@@ -1,20 +1,42 @@
 <script setup lang="ts">
-import { RouterLink } from 'vue-router'
+import { computed } from 'vue'
+import { RouterLink, useRoute } from 'vue-router'
+
+const route = useRoute()
+const showAllRecipesLink = computed(() => route.name !== 'home')
+const showNewRecipeLink = computed(() => route.name !== 'recipe-new')
 </script>
 
 <template>
   <div class="shell">
     <header class="top">
       <RouterLink to="/" class="brand">
-        <span class="brand-mark" aria-hidden="true" />
+        <span class="brand-mark" aria-hidden="true">
+          <svg class="brand-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none">
+            <g
+              stroke="currentColor"
+              stroke-width="1.7"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path
+                class="brand-icon-steam"
+                d="M8.5 5.5c.5.9.2 1.8-.3 2.5M12 4c.6 1.2.3 2.4-.2 3.2M15.5 5.5c.5.9.2 1.8-.3 2.5"
+              />
+              <path d="M5 11h14" />
+              <path d="M5 11v1c0 3.5 2.8 6.5 7 6.5s7-3 7-6.5v-1" />
+              <path d="M7 18v2.5A1.5 1.5 0 0 0 8.5 22h7a1.5 1.5 0 0 0 1.5-1.5V18" />
+            </g>
+          </svg>
+        </span>
         <span class="brand-text">
           <span class="brand-title">麦麦手记</span>
           <span class="brand-sub">菜谱 · 计划 · 做饭记录</span>
         </span>
       </RouterLink>
       <nav class="nav">
-        <RouterLink to="/" class="nav-link">全部菜谱</RouterLink>
-        <RouterLink to="/recipes/new" class="nav-cta">新建菜谱</RouterLink>
+        <RouterLink v-if="showAllRecipesLink" to="/" class="nav-link">全部菜谱</RouterLink>
+        <RouterLink v-if="showNewRecipeLink" to="/recipes/new" class="nav-cta">新建菜谱</RouterLink>
       </nav>
     </header>
     <main class="main">
@@ -52,11 +74,25 @@ import { RouterLink } from 'vue-router'
 }
 
 .brand-mark {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
   width: 2.5rem;
   height: 2.5rem;
   border-radius: 12px;
-  background: radial-gradient(circle at 30% 25%, #f4e8d4, #c45c3e 42%, #3d2914);
+  color: var(--color-accent);
+  background: linear-gradient(145deg, rgba(244, 232, 212, 0.95), rgba(196, 92, 62, 0.18));
   box-shadow: 0 6px 18px var(--color-warm-shadow);
+}
+
+.brand-icon {
+  width: 1.55rem;
+  height: 1.55rem;
+}
+
+.brand-icon-steam {
+  opacity: 0.65;
 }
 
 .brand-text {
@@ -83,16 +119,31 @@ import { RouterLink } from 'vue-router'
 }
 
 .nav-link {
-  padding: 0.45rem 0.75rem;
-  border-radius: var(--radius-sm);
+  padding: 0.5rem 1rem;
+  border-radius: 999px;
+  border: 1px solid var(--color-line);
+  background: var(--color-bg-elevated);
   color: var(--color-ink-muted);
   text-decoration: none;
-  font-size: 0.95rem;
+  font-size: 0.92rem;
+  font-family: var(--font-display);
+  font-weight: 600;
+  transition:
+    border-color 0.18s ease,
+    color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.nav-link:hover {
+  border-color: rgba(196, 92, 62, 0.35);
+  color: var(--color-accent);
 }
 
 .nav-link.router-link-active {
-  color: var(--color-ink);
-  background: rgba(31, 20, 12, 0.06);
+  color: var(--color-accent);
+  border-color: rgba(196, 92, 62, 0.45);
+  background: var(--color-accent-soft);
+  box-shadow: 0 2px 10px rgba(196, 92, 62, 0.12);
 }
 
 .nav-cta {

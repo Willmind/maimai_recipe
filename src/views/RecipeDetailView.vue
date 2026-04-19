@@ -11,6 +11,30 @@ const store = useRecipeStore()
 const id = computed(() => route.params.id as string)
 const recipe = computed(() => store.recipeById.get(id.value))
 
+/** 做饭日期距「此刻」越近越靠前；无法解析的日期排在最后 */
+const cookingRecordsByRecency = computed(() => {
+  const r = recipe.value
+  if (!r?.cookingRecords.length) return []
+  const now = Date.now()
+  const t = (iso: string) => {
+    const ms = new Date(iso).getTime()
+    return Number.isFinite(ms) ? ms : NaN
+  }
+  const dist = (iso: string) => {
+    const ms = t(iso)
+    return Number.isFinite(ms) ? Math.abs(ms - now) : Number.POSITIVE_INFINITY
+  }
+  return [...r.cookingRecords].sort((a, b) => {
+    const da = dist(a.cookedAt)
+    const db = dist(b.cookedAt)
+    if (da !== db) return da - db
+    const ta = t(a.cookedAt)
+    const tb = t(b.cookedAt)
+    if (Number.isFinite(ta) && Number.isFinite(tb) && ta !== tb) return tb - ta
+    return (b.createdAt ?? '').localeCompare(a.createdAt ?? '')
+  })
+})
+
 const planKind = computed({
   get: () => recipe.value?.planKind ?? 'none',
   set: (v: PlanKind) => {
@@ -109,7 +133,7 @@ function removeRecord(recordId: string) {
         <RouterLink :to="`/recipes/${recipe.id}/records/new`" class="add">＋ 新记录</RouterLink>
       </div>
       <p v-if="!recipe.cookingRecords.length" class="muted">还没有记录。做完拍一张吧。</p>
-      <article v-for="rec in recipe.cookingRecords" :key="rec.id" class="record">
+      <article v-for="rec in cookingRecordsByRecency" :key="rec.id" class="record">
         <div class="record-photos">
           <img v-for="(p, pi) in rec.photos" :key="pi" :src="p" alt="" />
         </div>
