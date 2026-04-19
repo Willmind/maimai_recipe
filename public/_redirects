@@ -1,0 +1,2 @@
+# SPA：任意路径都返回 index.html，由 Vue Router 处理（刷新 / 直达深链接才正常）
+/*    /index.html   200
