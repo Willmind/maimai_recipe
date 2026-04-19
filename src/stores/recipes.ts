@@ -1,13 +1,7 @@
 import { defineStore } from 'pinia'
-import { computed, ref, watch } from 'vue'
-import { createId } from '@/lib/id'
+import { computed, ref } from 'vue'
+import { createRecipesRepo } from '@/data/recipesRepo'
 import type { CookingRecord, PlanKind, Recipe, RecipeListFilter } from '@/types/recipe'
-
-const STORAGE_KEY = 'recipe-kitchen-v1'
-
-function nowIso(): string {
-  return new Date().toISOString()
-}
 
 function startOfWeekMonday(d: Date): Date {
   const day = d.getDay()
@@ -32,30 +26,29 @@ function parseYmd(s: string): Date {
 }
 
 export const useRecipeStore = defineStore('recipes', () => {
-  const recipes = ref<Recipe[]>([])
+  const repo = createRecipesRepo()
 
-  function load() {
+  const recipes = ref<Recipe[]>([])
+  const loading = ref(false)
+  const ready = ref(false)
+  const error = ref<string | null>(null)
+
+  async function load() {
+    loading.value = true
+    error.value = null
     try {
-      const raw = localStorage.getItem(STORAGE_KEY)
-      if (raw) recipes.value = JSON.parse(raw) as Recipe[]
-    } catch {
+      recipes.value = await repo.listRecipes()
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : String(e)
       recipes.value = []
+    } finally {
+      loading.value = false
+      ready.value = true
     }
   }
 
-  function persist() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(recipes.value))
-  }
-
-  load()
-
-  watch(
-    recipes,
-    () => {
-      persist()
-    },
-    { deep: true },
-  )
+  // 启动时拉取一次
+  void load()
 
   const recipeById = computed(() => {
     const map = new Map<string, Recipe>()
@@ -83,87 +76,123 @@ export const useRecipeStore = defineStore('recipes', () => {
     })
   }
 
-  function addRecipe(payload: Omit<Recipe, 'id' | 'createdAt' | 'updatedAt' | 'cookingRecords'>) {
-    const t = nowIso()
-    const r: Recipe = {
-      ...payload,
-      id: createId(),
-      cookingRecords: [],
-      createdAt: t,
-      updatedAt: t,
-    }
-    recipes.value.unshift(r)
-    return r.id
+  async function refresh() {
+    recipes.value = await repo.listRecipes()
   }
 
-  function updateRecipe(id: string, patch: Partial<Omit<Recipe, 'id' | 'createdAt'>>) {
-    const idx = recipes.value.findIndex((x) => x.id === id)
-    if (idx === -1) return
-    const cur = recipes.value[idx]
-    recipes.value[idx] = {
-      ...cur,
-      ...patch,
-      id: cur.id,
-      createdAt: cur.createdAt,
-      updatedAt: nowIso(),
+  async function addRecipe(payload: Omit<Recipe, 'id' | 'createdAt' | 'updatedAt' | 'cookingRecords'>) {
+    loading.value = true
+    error.value = null
+    try {
+      const id = await repo.createRecipe(payload)
+      await refresh()
+      return id
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : String(e)
+      return null
+    } finally {
+      loading.value = false
     }
   }
 
-  function deleteRecipe(id: string) {
-    recipes.value = recipes.value.filter((x) => x.id !== id)
+  async function updateRecipe(id: string, patch: Partial<Omit<Recipe, 'id' | 'createdAt'>>) {
+    loading.value = true
+    error.value = null
+    try {
+      await repo.updateRecipe(id, patch)
+      await refresh()
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : String(e)
+    } finally {
+      loading.value = false
+    }
   }
 
-  function setCooked(id: string, cooked: boolean) {
-    updateRecipe(id, { cooked })
+  async function deleteRecipe(id: string) {
+    loading.value = true
+    error.value = null
+    try {
+      await repo.deleteRecipe(id)
+      await refresh()
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : String(e)
+    } finally {
+      loading.value = false
+    }
   }
 
-  function setPlan(id: string, planKind: PlanKind, planDate: string | null) {
-    updateRecipe(id, {
-      planKind,
-      planDate: planKind === 'by_date' ? planDate : null,
-    })
+  async function setCooked(id: string, cooked: boolean) {
+    await updateRecipe(id, { cooked })
   }
 
-  function addCookingRecord(
+  async function setPlan(id: string, planKind: PlanKind, planDate: string | null) {
+    loading.value = true
+    error.value = null
+    try {
+      await repo.setPlan(id, planKind, planDate)
+      await refresh()
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : String(e)
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function addCookingRecord(
     recipeId: string,
     payload: Omit<CookingRecord, 'id' | 'recipeId' | 'createdAt'>,
   ) {
-    const recipe = recipeById.value.get(recipeId)
-    if (!recipe) return null
-    const rec: CookingRecord = {
-      ...payload,
-      id: createId(),
-      recipeId,
-      createdAt: nowIso(),
+    loading.value = true
+    error.value = null
+    try {
+      const id = await repo.addCookingRecord(recipeId, payload)
+      await refresh()
+      return id
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : String(e)
+      return null
+    } finally {
+      loading.value = false
     }
-    const nextRecords = [rec, ...recipe.cookingRecords]
-    updateRecipe(recipeId, { cookingRecords: nextRecords, cooked: true })
-    return rec.id
   }
 
-  function updateCookingRecord(
+  async function updateCookingRecord(
     recipeId: string,
     recordId: string,
     patch: Partial<Pick<CookingRecord, 'photos' | 'note' | 'cookedAt'>>,
   ) {
-    const recipe = recipeById.value.get(recipeId)
-    if (!recipe) return
-    const next = recipe.cookingRecords.map((c) =>
-      c.id === recordId ? { ...c, ...patch } : c,
-    )
-    updateRecipe(recipeId, { cookingRecords: next })
+    loading.value = true
+    error.value = null
+    try {
+      await repo.updateCookingRecord(recipeId, recordId, patch)
+      await refresh()
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : String(e)
+    } finally {
+      loading.value = false
+    }
   }
 
-  function deleteCookingRecord(recipeId: string, recordId: string) {
-    const recipe = recipeById.value.get(recipeId)
-    if (!recipe) return
-    const next = recipe.cookingRecords.filter((c) => c.id !== recordId)
-    updateRecipe(recipeId, { cookingRecords: next })
+  async function deleteCookingRecord(recipeId: string, recordId: string) {
+    loading.value = true
+    error.value = null
+    try {
+      await repo.deleteCookingRecord(recipeId, recordId)
+      await refresh()
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : String(e)
+    } finally {
+      loading.value = false
+    }
   }
 
   return {
+    repoMode: repo.mode,
     recipes,
     recipeById,
+    loading,
+    ready,
+    error,
     listFiltered,
     load,
     addRecipe,

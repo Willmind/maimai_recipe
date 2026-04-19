@@ -33,6 +33,11 @@ const router = createRouter({
       component: () => import('../views/CookingRecordFormView.vue'),
       props: true,
     },
+    {
+      path: '/demo/supabase',
+      name: 'demo-supabase',
+      component: () => import('../views/DemoSupabaseView.vue'),
+    },
   ],
   scrollBehavior() {
     return { top: 0 }
