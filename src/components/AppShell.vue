@@ -8,7 +8,7 @@ import { RouterLink } from 'vue-router'
       <RouterLink to="/" class="brand">
         <span class="brand-mark" aria-hidden="true" />
         <span class="brand-text">
-          <span class="brand-title">灶边手记</span>
+          <span class="brand-title">麦麦手记</span>
           <span class="brand-sub">菜谱 · 计划 · 做饭记录</span>
         </span>
       </RouterLink>
