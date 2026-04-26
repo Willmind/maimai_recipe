@@ -80,6 +80,7 @@ function removeRecord(recordId: string) {
       <div class="hero-text">
         <h1>{{ recipe.title }}</h1>
         <div class="chips">
+          <RouterLink :to="`/recipes/${recipe.id}/records/new`" class="chip primary">记一次</RouterLink>
           <button type="button" class="chip" :class="{ on: recipe.cooked }" @click="toggleCooked">
             {{ recipe.cooked ? '已做过' : '标记为做过' }}
           </button>
@@ -92,19 +93,31 @@ function removeRecord(recordId: string) {
     <section class="section animate-rise">
       <h2>计划</h2>
       <div class="plan-grid">
-        <label class="radio">
-          <input v-model="planKind" type="radio" value="none" />
-          <span>无</span>
-        </label>
-        <label class="radio">
-          <input v-model="planKind" type="radio" value="this_week" />
-          <span>本周要做</span>
-        </label>
-        <label class="radio wide">
-          <input v-model="planKind" type="radio" value="by_date" />
-          <span>指定日期</span>
+        <button
+          type="button"
+          class="plan-card"
+          :class="{ active: planKind === 'none' }"
+          @click="planKind = 'none'"
+        >
+          <span class="plan-title">无</span>
+          <span class="plan-copy">先不安排</span>
+        </button>
+        <button
+          type="button"
+          class="plan-card"
+          :class="{ active: planKind === 'this_week' }"
+          @click="planKind = 'this_week'"
+        >
+          <span class="plan-title">本周要做</span>
+          <span class="plan-copy">放进最近待做</span>
+        </button>
+        <div class="plan-card date-card" :class="{ active: planKind === 'by_date' }">
+          <button type="button" class="date-toggle" @click="planKind = 'by_date'">
+            <span class="plan-title">指定日期</span>
+            <span class="plan-copy">安排到具体某天</span>
+          </button>
           <input v-model="planDateLocal" type="date" class="date" :disabled="planKind !== 'by_date'" />
-        </label>
+        </div>
       </div>
     </section>
 
@@ -208,6 +221,9 @@ function removeRecord(recordId: string) {
   border: 1px solid var(--color-line);
   background: var(--color-bg-elevated);
   border-radius: 999px;
+  min-height: 2.75rem;
+  display: inline-flex;
+  align-items: center;
   padding: 0.35rem 0.85rem;
   font-size: 0.88rem;
   font-family: var(--font-display);
@@ -223,6 +239,14 @@ function removeRecord(recordId: string) {
 .chip.link {
   text-decoration: none;
   color: var(--color-accent);
+}
+
+.chip.primary {
+  background: var(--color-accent);
+  border-color: transparent;
+  color: #fffdf8;
+  text-decoration: none;
+  box-shadow: 0 4px 14px rgba(196, 92, 62, 0.22);
 }
 
 .chip.danger {
@@ -248,22 +272,58 @@ function removeRecord(recordId: string) {
   background: var(--color-bg-elevated);
 }
 
-.radio {
-  display: flex;
-  align-items: center;
-  gap: 0.45rem;
-  cursor: pointer;
+.plan-card {
+  width: 100%;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-elevated);
+  color: var(--color-ink);
+  padding: 0.85rem 0.95rem;
+  text-align: left;
 }
 
-.radio.wide {
-  flex-wrap: wrap;
+.plan-card.active {
+  border-color: rgba(196, 92, 62, 0.45);
+  background: rgba(196, 92, 62, 0.08);
+  box-shadow: 0 0 0 1px rgba(196, 92, 62, 0.12);
+}
+
+.plan-title,
+.plan-copy {
+  display: block;
+}
+
+.plan-title {
+  font-family: var(--font-display);
+  font-weight: 600;
+}
+
+.plan-copy {
+  margin-top: 0.15rem;
+  font-size: 0.88rem;
+  color: var(--color-ink-muted);
+}
+
+.date-card {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.date-toggle {
+  border: none;
+  background: transparent;
+  padding: 0;
+  text-align: left;
+  color: inherit;
 }
 
 .date {
+  width: 100%;
+  max-width: 14rem;
   border: 1px solid var(--color-line);
   border-radius: var(--radius-sm);
-  padding: 0.25rem 0.4rem;
-  background: #fff;
+  padding: 0.6rem 0.75rem;
+  background: var(--color-bg-elevated);
 }
 
 .list {
@@ -357,13 +417,16 @@ function removeRecord(recordId: string) {
 
 .mini {
   font-size: 0.85rem;
-  border: none;
-  background: none;
-  padding: 0;
+  min-height: 2.25rem;
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--color-line);
+  background: var(--color-bg-elevated);
+  border-radius: 999px;
+  padding: 0.3rem 0.75rem;
   cursor: pointer;
   color: var(--color-accent);
-  text-decoration: underline;
-  text-underline-offset: 2px;
+  text-decoration: none;
 }
 
 .mini.danger {
@@ -376,5 +439,15 @@ function removeRecord(recordId: string) {
 
 .missing {
   color: var(--color-ink-muted);
+}
+
+@media (max-width: 640px) {
+  .records-head {
+    align-items: center;
+  }
+
+  .add {
+    display: none;
+  }
 }
 </style>

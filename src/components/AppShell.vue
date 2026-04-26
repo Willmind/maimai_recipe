@@ -119,6 +119,9 @@ const showNewRecipeLink = computed(() => route.name !== 'recipe-new')
 }
 
 .nav-link {
+  min-height: 2.75rem;
+  display: inline-flex;
+  align-items: center;
   padding: 0.5rem 1rem;
   border-radius: 999px;
   border: 1px solid var(--color-line);
@@ -147,6 +150,9 @@ const showNewRecipeLink = computed(() => route.name !== 'recipe-new')
 }
 
 .nav-cta {
+  min-height: 2.75rem;
+  display: inline-flex;
+  align-items: center;
   padding: 0.5rem 1rem;
   border-radius: 999px;
   background: var(--color-accent);
@@ -179,5 +185,37 @@ const showNewRecipeLink = computed(() => route.name !== 'recipe-new')
   font-size: 0.82rem;
   color: var(--color-ink-muted);
   text-align: center;
+}
+
+@media (max-width: 640px) {
+  .top {
+    gap: 0.75rem;
+    padding-top: 0.9rem;
+    padding-bottom: 0.9rem;
+  }
+
+  .brand {
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+
+  .brand-title {
+    font-size: 1.2rem;
+  }
+
+  .brand-sub {
+    display: none;
+  }
+
+  .nav {
+    gap: 0.5rem;
+    flex: 0 0 auto;
+  }
+
+  .nav-link,
+  .nav-cta {
+    padding-inline: 0.85rem;
+    font-size: 0.88rem;
+  }
 }
 </style>

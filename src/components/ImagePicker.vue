@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useTemplateRef } from 'vue'
-import { filesToDataUrls } from '@/composables/useImageFiles'
+import { filesToStoredUrls } from '@/composables/useStoredImages'
 
 withDefaults(defineProps<{ label?: string }>(), { label: '选择图片' })
 
@@ -12,7 +12,7 @@ async function onFiles(e: Event) {
   const input = e.target as HTMLInputElement
   const files = input.files
   if (!files?.length) return
-  const urls = await filesToDataUrls(files)
+  const urls = await filesToStoredUrls(files, { folder: 'covers', kind: 'cover' })
   model.value = urls[0] ?? null
   input.value = ''
 }
@@ -49,6 +49,7 @@ function pick() {
   border: 1px dashed var(--color-line);
   background: var(--color-bg-elevated);
   color: var(--color-ink-muted);
+  min-height: 2.75rem;
   padding: 0.45rem 0.85rem;
   border-radius: var(--radius-sm);
   font-size: 0.92rem;

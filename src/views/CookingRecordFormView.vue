@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, useTemplateRef } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { filesToDataUrls } from '@/composables/useImageFiles'
+import { computed, onBeforeUnmount, onMounted, ref, useTemplateRef } from 'vue'
+import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router'
+import { filesToStoredUrls } from '@/composables/useStoredImages'
 import { useRecipeStore } from '@/stores/recipes'
 
 const route = useRoute()
@@ -17,8 +17,27 @@ const recipe = computed(() => store.recipeById.get(recipeId.value))
 const photos = ref<string[]>([])
 const note = ref('')
 const cookedAt = ref('')
+const saving = ref(false)
+const initialSnapshot = ref('')
 
 const fileInput = useTemplateRef('fileInput')
+
+function refreshInitialSnapshot() {
+  initialSnapshot.value = JSON.stringify({
+    photos: photos.value,
+    note: note.value,
+    cookedAt: cookedAt.value,
+  })
+}
+
+const isDirty = computed(
+  () =>
+    JSON.stringify({
+      photos: photos.value,
+      note: note.value,
+      cookedAt: cookedAt.value,
+    }) !== initialSnapshot.value,
+)
 
 onMounted(() => {
   const r = recipe.value
@@ -30,6 +49,7 @@ onMounted(() => {
   if (!rid) {
     const t = new Date()
     cookedAt.value = t.toISOString().slice(0, 10)
+    refreshInitialSnapshot()
     return
   }
   const rec = r.cookingRecords.find((x) => x.id === rid)
@@ -40,13 +60,33 @@ onMounted(() => {
   photos.value = [...rec.photos]
   note.value = rec.note
   cookedAt.value = rec.cookedAt.slice(0, 10)
+  refreshInitialSnapshot()
+})
+
+function onBeforeUnload(e: BeforeUnloadEvent) {
+  if (!isDirty.value || saving.value) return
+  e.preventDefault()
+  e.returnValue = ''
+}
+
+onMounted(() => {
+  window.addEventListener('beforeunload', onBeforeUnload)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('beforeunload', onBeforeUnload)
+})
+
+onBeforeRouteLeave(() => {
+  if (!isDirty.value || saving.value) return true
+  return window.confirm('当前记录还没保存，确定要离开吗？')
 })
 
 async function onFiles(e: Event) {
   const input = e.target as HTMLInputElement
   const files = input.files
   if (!files?.length) return
-  const urls = await filesToDataUrls(files)
+  const urls = await filesToStoredUrls(files, { folder: `records/${recipeId.value}`, kind: 'record' })
   photos.value = [...urls, ...photos.value]
   input.value = ''
 }
@@ -59,24 +99,31 @@ function removePhoto(i: number) {
   photos.value = photos.value.filter((_, j) => j !== i)
 }
 
-function save() {
+async function save() {
+  if (saving.value) return
   const r = recipe.value
   if (!r) return
   const at = cookedAt.value ? new Date(cookedAt.value + 'T12:00:00').toISOString() : new Date().toISOString()
-  if (isEdit.value && recordId.value) {
-    store.updateCookingRecord(r.id, recordId.value, {
-      photos: photos.value,
-      note: note.value,
-      cookedAt: at,
-    })
-  } else {
-    store.addCookingRecord(r.id, {
-      photos: photos.value,
-      note: note.value,
-      cookedAt: at,
-    })
+  saving.value = true
+  try {
+    if (isEdit.value && recordId.value) {
+      await store.updateCookingRecord(r.id, recordId.value, {
+        photos: photos.value,
+        note: note.value,
+        cookedAt: at,
+      })
+    } else {
+      await store.addCookingRecord(r.id, {
+        photos: photos.value,
+        note: note.value,
+        cookedAt: at,
+      })
+    }
+    refreshInitialSnapshot()
+    await router.push(`/recipes/${r.id}`)
+  } finally {
+    saving.value = false
   }
-  router.push(`/recipes/${r.id}`)
 }
 </script>
 
@@ -111,8 +158,8 @@ function save() {
       </label>
 
       <div class="actions">
-        <button type="button" class="ghost" @click="router.back()">取消</button>
-        <button type="submit" class="primary">保存</button>
+        <button type="button" class="ghost" :disabled="saving" @click="router.back()">取消</button>
+        <button type="submit" class="primary" :disabled="saving">{{ saving ? '保存中…' : '保存' }}</button>
       </div>
     </form>
   </div>
@@ -170,6 +217,7 @@ function save() {
   border: 1px dashed var(--color-line);
   background: var(--color-bg-elevated);
   color: var(--color-ink-muted);
+  min-height: 2.75rem;
   padding: 0.45rem 0.85rem;
   border-radius: var(--radius-sm);
 }
@@ -201,8 +249,8 @@ function save() {
   position: absolute;
   top: -6px;
   right: -6px;
-  width: 1.5rem;
-  height: 1.5rem;
+  width: 2rem;
+  height: 2rem;
   border-radius: 999px;
   border: none;
   background: var(--color-ink);
@@ -230,12 +278,17 @@ function save() {
   display: flex;
   justify-content: flex-end;
   gap: 0.6rem;
+  position: sticky;
+  bottom: 0;
+  padding: 0.85rem 0 calc(0.85rem + env(safe-area-inset-bottom, 0px));
+  background: linear-gradient(180deg, rgba(246, 240, 230, 0), rgba(246, 240, 230, 0.92) 24%, rgba(246, 240, 230, 1));
 }
 
 .primary {
   cursor: pointer;
   border: none;
   border-radius: 999px;
+  min-height: 2.75rem;
   padding: 0.55rem 1.35rem;
   background: var(--color-accent);
   color: #fffdf8;
@@ -248,7 +301,14 @@ function save() {
   border: 1px solid var(--color-line);
   background: transparent;
   border-radius: 999px;
+  min-height: 2.75rem;
   padding: 0.5rem 1rem;
   color: var(--color-ink-muted);
+}
+
+.primary:disabled,
+.ghost:disabled {
+  cursor: wait;
+  opacity: 0.7;
 }
 </style>

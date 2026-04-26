@@ -146,15 +146,22 @@ const skeletonCount = 8
 
 .tabs {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  overflow-x: auto;
   gap: 0.4rem;
   flex: 1 1 auto;
   min-width: 0;
+  padding-bottom: 0.1rem;
+  scrollbar-width: none;
+}
+
+.tabs::-webkit-scrollbar {
+  display: none;
 }
 
 .search {
-  flex: 0 1 14rem;
-  min-width: 10rem;
+  flex: 1 1 100%;
+  min-width: 0;
 }
 
 .search-input {
@@ -195,6 +202,8 @@ const skeletonCount = 8
   border: 1px solid transparent;
   background: rgba(255, 253, 248, 0.7);
   color: var(--color-ink-muted);
+  min-height: 2.75rem;
+  flex: 0 0 auto;
   padding: 0.4rem 0.85rem;
   border-radius: 999px;
   font-family: var(--font-display);
@@ -214,8 +223,7 @@ const skeletonCount = 8
 .grid {
   display: grid;
   gap: 0.75rem;
-  /* 窄屏（如 iPhone 12/16 Pro）固定两列，避免 minmax(260px) 挤成单列 */
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .skeleton-grid {
@@ -285,6 +293,12 @@ const skeletonCount = 8
   .grid {
     gap: 1.25rem;
     grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  }
+}
+
+@media (min-width: 520px) and (max-width: 719px) {
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
