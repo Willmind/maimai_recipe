@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
+import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import { useRecipeStore } from '@/stores/recipes'
 import type { PlanKind } from '@/types/recipe'
 
@@ -58,15 +59,36 @@ function toggleCooked() {
 
 function removeRecipe() {
   if (!recipe.value) return
-  if (!confirm(`确定删除「${recipe.value.title}」？相关记录也会一并删除。`)) return
-  store.deleteRecipe(recipe.value.id)
-  router.push('/')
+  deleteTarget.value = { kind: 'recipe', id: recipe.value.id, title: recipe.value.title }
+  showDeleteConfirm.value = true
 }
 
 function removeRecord(recordId: string) {
   if (!recipe.value) return
-  if (!confirm('删除这条做饭记录？')) return
-  store.deleteCookingRecord(recipe.value.id, recordId)
+  deleteTarget.value = { kind: 'record', recipeId: recipe.value.id, recordId }
+  showDeleteConfirm.value = true
+}
+
+const showDeleteConfirm = ref(false)
+const deleteTarget = ref<
+  | null
+  | { kind: 'recipe'; id: string; title: string }
+  | { kind: 'record'; recipeId: string; recordId: string }
+>(null)
+
+function onConfirmDelete() {
+  const t = deleteTarget.value
+  showDeleteConfirm.value = false
+  deleteTarget.value = null
+  if (!t) return
+
+  if (t.kind === 'recipe') {
+    store.deleteRecipe(t.id)
+    router.push('/')
+    return
+  }
+
+  store.deleteCookingRecord(t.recipeId, t.recordId)
 }
 </script>
 
@@ -166,6 +188,25 @@ function removeRecord(recordId: string) {
     </p>
   </div>
   <p v-else class="missing">菜谱不存在。</p>
+
+  <ConfirmDialog
+    v-model:open="showDeleteConfirm"
+    title="确认删除？"
+    :message="
+      deleteTarget?.kind === 'recipe'
+        ? `将删除「${deleteTarget.title}」，以及它的所有做饭记录。此操作无法撤销。`
+        : '将删除这条做饭记录。此操作无法撤销。'
+    "
+    confirm-text="删除"
+    cancel-text="取消"
+    @confirm="onConfirmDelete"
+    @cancel="
+      () => {
+        showDeleteConfirm = false
+        deleteTarget = null
+      }
+    "
+  />
 </template>
 
 <style scoped>
@@ -228,6 +269,23 @@ function removeRecord(recordId: string) {
   font-size: 0.88rem;
   font-family: var(--font-display);
   color: var(--color-ink-muted);
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    border-color 0.18s ease,
+    color 0.18s ease,
+    background 0.18s ease;
+}
+
+.chip:hover {
+  transform: translateY(-1px);
+  border-color: rgba(196, 92, 62, 0.35);
+  box-shadow: 0 10px 22px rgba(31, 20, 12, 0.08);
+}
+
+.chip:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
 }
 
 .chip.on {
@@ -236,9 +294,19 @@ function removeRecord(recordId: string) {
   border-color: rgba(74, 93, 62, 0.35);
 }
 
+.chip.on:hover {
+  border-color: rgba(74, 93, 62, 0.5);
+  box-shadow: 0 10px 22px rgba(31, 20, 12, 0.1);
+}
+
 .chip.link {
   text-decoration: none;
   color: var(--color-accent);
+}
+
+.chip.link:hover {
+  color: var(--color-olive);
+  border-color: rgba(74, 93, 62, 0.35);
 }
 
 .chip.primary {
@@ -249,8 +317,18 @@ function removeRecord(recordId: string) {
   box-shadow: 0 4px 14px rgba(196, 92, 62, 0.22);
 }
 
+.chip.primary:hover {
+  box-shadow: 0 10px 26px rgba(196, 92, 62, 0.35);
+  transform: translateY(-1px);
+}
+
 .chip.danger {
   color: #a33;
+}
+
+.chip.danger:hover {
+  border-color: rgba(163, 51, 51, 0.35);
+  box-shadow: 0 10px 22px rgba(31, 20, 12, 0.08);
 }
 
 .section {
@@ -280,12 +358,36 @@ function removeRecord(recordId: string) {
   color: var(--color-ink);
   padding: 0.85rem 0.95rem;
   text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    transform 0.18s ease,
+    background 0.18s ease;
+}
+
+.plan-card:hover {
+  border-color: rgba(196, 92, 62, 0.28);
+  box-shadow: 0 10px 22px rgba(31, 20, 12, 0.08);
+  transform: translateY(-1px);
+}
+
+.plan-card:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
 }
 
 .plan-card.active {
   border-color: rgba(196, 92, 62, 0.45);
   background: rgba(196, 92, 62, 0.08);
   box-shadow: 0 0 0 1px rgba(196, 92, 62, 0.12);
+}
+
+.plan-card.active:hover {
+  border-color: rgba(196, 92, 62, 0.55);
+  box-shadow:
+    0 0 0 1px rgba(196, 92, 62, 0.14),
+    0 12px 26px rgba(31, 20, 12, 0.1);
 }
 
 .plan-title,
@@ -315,6 +417,7 @@ function removeRecord(recordId: string) {
   padding: 0;
   text-align: left;
   color: inherit;
+  cursor: pointer;
 }
 
 .date {

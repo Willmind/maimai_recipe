@@ -1,12 +1,15 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import RecipeCard from '@/components/RecipeCard.vue'
+import TagSelect from '@/components/TagSelect.vue'
+import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import { useRecipeStore } from '@/stores/recipes'
 import type { RecipeListFilter } from '@/types/recipe'
 
 const store = useRecipeStore()
 const filter = ref<RecipeListFilter>('all')
 const titleQuery = ref('')
+const tagFilter = ref<string>('all')
 
 function includesInsensitive(hay: string, needle: string): boolean {
   return hay.toLowerCase().includes(needle.toLowerCase())
@@ -44,7 +47,14 @@ const tabs: { key: RecipeListFilter; label: string }[] = [
 ]
 
 const list = computed(() => {
-  const rows = store.listFiltered(filter.value).filter((r) => titleMatchesQuery(r.title, titleQuery.value))
+  const rows = store
+    .listFiltered(filter.value)
+    .filter((r) => titleMatchesQuery(r.title, titleQuery.value))
+    .filter((r) => {
+      if (tagFilter.value === 'all') return true
+      const ids = store.recipeTagIdsByRecipeId.get(r.id) ?? []
+      return ids.includes(tagFilter.value)
+    })
   return [...rows].sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1))
 })
 
@@ -52,6 +62,24 @@ const hasActiveSearch = computed(() => Boolean(titleQuery.value.trim()))
 
 const isInitialLoading = computed(() => !store.ready)
 const skeletonCount = 8
+
+const selectMode = ref(false)
+const selectedIds = ref<string[]>([])
+const showDeleteConfirm = ref(false)
+
+function toggleSelectMode() {
+  selectMode.value = !selectMode.value
+  selectedIds.value = []
+}
+
+function toggleSelected(id: string) {
+  const set = new Set(selectedIds.value)
+  if (set.has(id)) set.delete(id)
+  else set.add(id)
+  selectedIds.value = Array.from(set)
+}
+
+const selectedCount = computed(() => selectedIds.value.length)
 </script>
 
 <template>
@@ -87,10 +115,33 @@ const skeletonCount = 8
           aria-label="按标题模糊搜索菜谱"
         />
       </label>
+      <TagSelect v-if="store.tags.length" v-model="tagFilter" :tags="store.tags" />
+      <button type="button" class="tab manage" :class="{ active: selectMode }" @click="toggleSelectMode">
+        {{ selectMode ? '取消多选' : '多选' }}
+      </button>
+    </div>
+
+    <div v-if="selectMode" class="bulk animate-rise" aria-label="批量操作">
+      <div class="bulk-left">已选 {{ selectedCount }} 项</div>
+      <button
+        type="button"
+        class="bulk-danger"
+        :disabled="selectedCount === 0 || store.loading"
+        @click="showDeleteConfirm = true"
+      >
+        删除
+      </button>
     </div>
 
     <div v-if="list.length" class="grid animate-rise-stagger">
-      <RecipeCard v-for="r in list" :key="r.id" :recipe="r" />
+      <RecipeCard
+        v-for="r in list"
+        :key="r.id"
+        :recipe="r"
+        :select-mode="selectMode"
+        :selected="selectedIds.includes(r.id)"
+        @toggle="toggleSelected"
+      />
     </div>
     <div
       v-else-if="isInitialLoading"
@@ -112,6 +163,24 @@ const skeletonCount = 8
       <template v-if="hasActiveSearch">没有标题匹配当前搜索的菜谱。</template>
       <template v-else>还没有符合条件的菜谱。去新建一道吧。</template>
     </p>
+
+    <ConfirmDialog
+      v-model:open="showDeleteConfirm"
+      title="删除已选菜谱？"
+      :message="`将删除 ${selectedCount} 个菜谱（以及关联的做饭记录）。此操作无法撤销。`"
+      confirm-text="删除"
+      cancel-text="取消"
+      @confirm="
+        async () => {
+          const ids = [...selectedIds]
+          showDeleteConfirm = false
+          await store.deleteRecipes(ids)
+          selectedIds = []
+          selectMode = false
+        }
+      "
+      @cancel="showDeleteConfirm = false"
+    />
   </div>
 </template>
 
@@ -142,21 +211,18 @@ const skeletonCount = 8
   justify-content: space-between;
   gap: 0.75rem 1rem;
   margin-bottom: 1.5rem;
+  position: relative;
+  z-index: 10;
 }
 
 .tabs {
   display: flex;
-  flex-wrap: nowrap;
-  overflow-x: auto;
+  flex-wrap: wrap;
+  overflow: visible;
   gap: 0.4rem;
   flex: 1 1 auto;
   min-width: 0;
   padding-bottom: 0.1rem;
-  scrollbar-width: none;
-}
-
-.tabs::-webkit-scrollbar {
-  display: none;
 }
 
 .search {
@@ -208,16 +274,84 @@ const skeletonCount = 8
   border-radius: 999px;
   font-family: var(--font-display);
   font-size: 0.92rem;
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    border-color 0.18s ease,
+    color 0.18s ease,
+    background 0.18s ease;
 }
 
+.tab.manage {
+  flex: 0 0 auto;
+}
+
+.bulk {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  background: rgba(255, 253, 248, 0.85);
+  margin-bottom: 1rem;
+}
+
+.bulk-left {
+  color: var(--color-ink-muted);
+  font-family: var(--font-display);
+  font-weight: 600;
+}
+
+.bulk-danger {
+  height: 2.75rem;
+  padding: 0 1.15rem;
+  border-radius: 999px;
+  border: 1px solid rgba(163, 51, 51, 0.25);
+  background: rgba(163, 51, 51, 0.06);
+  color: #a33;
+  font-family: var(--font-display);
+  font-weight: 600;
+  cursor: pointer;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    border-color 0.18s ease,
+    background 0.18s ease;
+}
+
+.bulk-danger:hover:enabled {
+  transform: translateY(-1px);
+  border-color: rgba(163, 51, 51, 0.4);
+  box-shadow: 0 10px 22px rgba(31, 20, 12, 0.08);
+}
+
+.bulk-danger:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
 .tab:hover {
-  color: var(--color-ink);
+  transform: translateY(-1px);
+  border-color: rgba(196, 92, 62, 0.28);
+  color: var(--color-accent);
+  box-shadow: 0 8px 22px rgba(31, 20, 12, 0.1);
 }
 
 .tab.active {
   background: var(--color-accent-soft);
   color: var(--color-accent);
   border-color: rgba(196, 92, 62, 0.35);
+  box-shadow: 0 2px 10px rgba(196, 92, 62, 0.12);
+}
+
+.tab:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
 }
 
 .grid {

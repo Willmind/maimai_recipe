@@ -2,6 +2,8 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router'
 import ImagePicker from '@/components/ImagePicker.vue'
+import ConfirmDialog from '@/components/ConfirmDialog.vue'
+import TagManagerDialog from '@/components/TagManagerDialog.vue'
 import { useRecipeStore } from '@/stores/recipes'
 import type { PlanKind, Recipe } from '@/types/recipe'
 
@@ -21,6 +23,10 @@ const planKind = ref<PlanKind>('none')
 const planDate = ref('')
 const saving = ref(false)
 const initialSnapshot = ref('')
+const showLeaveConfirm = ref(false)
+const leaveResolver = ref<((ok: boolean) => void) | null>(null)
+const selectedTagIds = ref<string[]>([])
+const showTagManager = ref(false)
 
 function linesToArr(s: string): string[] {
   return s
@@ -69,6 +75,7 @@ onMounted(() => {
   cooked.value = r.cooked
   planKind.value = r.planKind
   planDate.value = r.planDate ?? ''
+  selectedTagIds.value = [...(store.recipeTagIdsByRecipeId.get(id) ?? [])]
   refreshInitialSnapshot()
 })
 
@@ -81,6 +88,7 @@ watch(recipeId, (id) => {
     cooked.value = false
     planKind.value = 'none'
     planDate.value = ''
+    selectedTagIds.value = []
     refreshInitialSnapshot()
   }
 })
@@ -101,8 +109,18 @@ onBeforeUnmount(() => {
 
 onBeforeRouteLeave(() => {
   if (!isDirty.value || saving.value) return true
-  return window.confirm('当前修改还没保存，确定要离开吗？')
+  showLeaveConfirm.value = true
+  return new Promise<boolean>((resolve) => {
+    leaveResolver.value = resolve
+  })
 })
+
+function confirmLeave(ok: boolean) {
+  const r = leaveResolver.value
+  leaveResolver.value = null
+  showLeaveConfirm.value = false
+  r?.(ok)
+}
 
 async function save() {
   if (saving.value) return
@@ -114,6 +132,7 @@ async function save() {
         ...buildPayload(),
         cookingRecords: r?.cookingRecords ?? [],
       })
+      await store.setTags(recipeId.value, selectedTagIds.value)
       refreshInitialSnapshot()
       await router.push(`/recipes/${recipeId.value}`)
     } finally {
@@ -124,6 +143,7 @@ async function save() {
     try {
       const id = await store.addRecipe(buildPayload())
       if (!id) return
+      await store.setTags(id, selectedTagIds.value)
       refreshInitialSnapshot()
       await router.push(`/recipes/${id}`)
     } finally {
@@ -134,6 +154,13 @@ async function save() {
 
 function removeCover() {
   coverImage.value = null
+}
+
+function toggleTag(id: string) {
+  const set = new Set(selectedTagIds.value)
+  if (set.has(id)) set.delete(id)
+  else set.add(id)
+  selectedTagIds.value = Array.from(set)
 }
 </script>
 
@@ -222,12 +249,44 @@ function removeCover() {
         </div>
       </fieldset>
 
+      <fieldset class="fieldset">
+        <legend class="label row-between">
+          <span>标签</span>
+          <button type="button" class="mini-link" @click="showTagManager = true">管理标签</button>
+        </legend>
+        <div v-if="store.tags.length" class="tag-grid">
+          <button
+            v-for="t in store.tags"
+            :key="t.id"
+            type="button"
+            class="tag-pill"
+            :class="{ on: selectedTagIds.includes(t.id) }"
+            @click="toggleTag(t.id)"
+          >
+            {{ t.name }}
+          </button>
+        </div>
+        <p v-else class="muted">还没有标签。点「管理标签」新增一个吧。</p>
+      </fieldset>
+
       <div class="actions">
         <button type="button" class="ghost" :disabled="saving" @click="router.back()">取消</button>
         <button type="submit" class="primary" :disabled="saving">{{ saving ? '保存中…' : '保存' }}</button>
       </div>
     </form>
   </div>
+
+  <ConfirmDialog
+    v-model:open="showLeaveConfirm"
+    title="放弃未保存的修改？"
+    message="你刚才的内容还没保存，离开后会丢失。"
+    confirm-text="离开"
+    cancel-text="继续编辑"
+    @confirm="confirmLeave(true)"
+    @cancel="confirmLeave(false)"
+  />
+
+  <TagManagerDialog v-model:open="showTagManager" />
 </template>
 
 <style scoped>
@@ -277,6 +336,28 @@ function removeCover() {
   padding: 0.55rem 0.75rem;
   background: var(--color-bg-elevated);
   color: var(--color-ink);
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    background 0.18s ease;
+}
+
+.input:hover,
+.textarea:hover {
+  border-color: rgba(196, 92, 62, 0.28);
+}
+
+.input:focus,
+.textarea:focus {
+  outline: none;
+  border-color: rgba(196, 92, 62, 0.45);
+  box-shadow: 0 0 0 3px rgba(196, 92, 62, 0.12);
+}
+
+.input:disabled,
+.textarea:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
 }
 
 .textarea {
@@ -322,6 +403,69 @@ function removeCover() {
   margin: 0;
 }
 
+.row-between {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.mini-link {
+  border: none;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+  color: var(--color-accent);
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.92rem;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.tag-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.tag-pill {
+  height: 2.5rem;
+  padding: 0 0.9rem;
+  border-radius: 999px;
+  border: 1px solid var(--color-line);
+  background: var(--color-bg-elevated);
+  color: var(--color-ink-muted);
+  font-family: var(--font-display);
+  font-weight: 600;
+  cursor: pointer;
+  line-height: 1;
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    border-color 0.18s ease,
+    color 0.18s ease,
+    background 0.18s ease;
+}
+
+.tag-pill:hover {
+  transform: translateY(-1px);
+  border-color: rgba(196, 92, 62, 0.35);
+  box-shadow: 0 10px 22px rgba(31, 20, 12, 0.08);
+}
+
+.tag-pill.on {
+  border-color: rgba(196, 92, 62, 0.45);
+  background: rgba(196, 92, 62, 0.08);
+  color: var(--color-accent);
+  box-shadow: 0 0 0 1px rgba(196, 92, 62, 0.12);
+}
+
+.muted {
+  margin: 0;
+  color: var(--color-ink-muted);
+}
+
 .plan-options {
   display: grid;
   gap: 0.65rem;
@@ -335,12 +479,36 @@ function removeCover() {
   color: var(--color-ink);
   padding: 0.85rem 0.95rem;
   text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    transform 0.18s ease,
+    background 0.18s ease;
+}
+
+.plan-option:hover {
+  border-color: rgba(196, 92, 62, 0.28);
+  box-shadow: 0 10px 22px rgba(31, 20, 12, 0.08);
+  transform: translateY(-1px);
+}
+
+.plan-option:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
 }
 
 .plan-option.active {
   border-color: rgba(196, 92, 62, 0.45);
   background: rgba(196, 92, 62, 0.08);
   box-shadow: 0 0 0 1px rgba(196, 92, 62, 0.12);
+}
+
+.plan-option.active:hover {
+  border-color: rgba(196, 92, 62, 0.55);
+  box-shadow:
+    0 0 0 1px rgba(196, 92, 62, 0.14),
+    0 12px 26px rgba(31, 20, 12, 0.1);
 }
 
 .plan-title,
@@ -370,6 +538,7 @@ function removeCover() {
   padding: 0;
   text-align: left;
   color: inherit;
+  cursor: pointer;
 }
 
 .actions {
@@ -379,20 +548,39 @@ function removeCover() {
   margin-top: 0.5rem;
   position: sticky;
   bottom: 0;
-  padding: 0.85rem 0 calc(0.85rem + env(safe-area-inset-bottom, 0px));
+  padding: 1.85rem 0 calc(0.85rem + env(safe-area-inset-bottom, 0px));
   background: linear-gradient(180deg, rgba(246, 240, 230, 0), rgba(246, 240, 230, 0.92) 24%, rgba(246, 240, 230, 1));
+}
+
+.actions .ghost,
+.actions .primary {
+  min-width: 4.75rem;
 }
 
 .primary {
   cursor: pointer;
   border: none;
   border-radius: 999px;
-  min-height: 2.75rem;
-  padding: 0.55rem 1.35rem;
+  height: 2.75rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 1.35rem;
   background: var(--color-accent);
   color: #fffdf8;
   font-family: var(--font-display);
   font-weight: 600;
+  font-size: 0.92rem;
+  line-height: 1;
+  box-shadow: 0 4px 14px rgba(196, 92, 62, 0.28);
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 26px rgba(196, 92, 62, 0.38);
 }
 
 .ghost {
@@ -400,14 +588,44 @@ function removeCover() {
   border: 1px solid var(--color-line);
   background: transparent;
   border-radius: 999px;
-  min-height: 2.75rem;
-  padding: 0.5rem 1rem;
+  height: 2.75rem;
+  box-sizing: border-box;
+  appearance: none;
+  -webkit-appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 1rem;
   color: var(--color-ink-muted);
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.92rem;
+  line-height: 1;
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    border-color 0.18s ease,
+    color 0.18s ease,
+    background 0.18s ease;
+}
+
+.ghost:hover {
+  transform: translateY(-1px);
+  border-color: rgba(196, 92, 62, 0.35);
+  color: var(--color-accent);
+  background: rgba(255, 253, 248, 0.7);
+  box-shadow: 0 10px 22px rgba(31, 20, 12, 0.08);
 }
 
 .primary:disabled,
 .ghost:disabled {
   cursor: wait;
   opacity: 0.7;
+}
+
+.primary:disabled:hover,
+.ghost:disabled:hover {
+  transform: none;
+  box-shadow: none;
 }
 </style>

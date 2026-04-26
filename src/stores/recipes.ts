@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
-import { computed, ref } from 'vue'
+import { ref, shallowRef } from 'vue'
 import { createRecipesRepo } from '@/data/recipesRepo'
-import type { CookingRecord, PlanKind, Recipe, RecipeListFilter } from '@/types/recipe'
+import type { CookingRecord, PlanKind, Recipe, RecipeListFilter, Tag } from '@/types/recipe'
 
 function startOfWeekMonday(d: Date): Date {
   const day = d.getDay()
@@ -29,18 +29,72 @@ export const useRecipeStore = defineStore('recipes', () => {
   const repo = createRecipesRepo()
 
   const recipes = ref<Recipe[]>([])
+  const recipeById = shallowRef(new Map<string, Recipe>())
+  const indexById = shallowRef(new Map<string, number>())
+  const tags = ref<Tag[]>([])
+  const recipeTagIdsByRecipeId = shallowRef(new Map<string, string[]>())
   const loading = ref(false)
   const ready = ref(false)
   const error = ref<string | null>(null)
+
+  function setRecipes(next: Recipe[]) {
+    recipes.value = next
+    const map = new Map<string, Recipe>()
+    const idx = new Map<string, number>()
+    for (let i = 0; i < next.length; i++) {
+      const r = next[i]
+      map.set(r.id, r)
+      idx.set(r.id, i)
+    }
+    recipeById.value = map
+    indexById.value = idx
+  }
+
+  function updateRecipeLocal(next: Recipe) {
+    const i = indexById.value.get(next.id)
+    if (i === undefined) return false
+    recipes.value[i] = next
+    const map = new Map(recipeById.value)
+    map.set(next.id, next)
+    recipeById.value = map
+    return true
+  }
+
+  function removeRecipeLocal(id: string) {
+    const i = indexById.value.get(id)
+    if (i === undefined) return
+    const nextList = recipes.value.filter((r) => r.id !== id)
+    setRecipes(nextList)
+  }
+
+  function removeRecipesLocal(ids: string[]) {
+    const set = new Set(ids)
+    if (!set.size) return
+    const nextList = recipes.value.filter((r) => !set.has(r.id))
+    setRecipes(nextList)
+    const relNext = new Map<string, string[]>()
+    for (const [rid, t] of recipeTagIdsByRecipeId.value.entries()) {
+      if (!set.has(rid)) relNext.set(rid, t)
+    }
+    recipeTagIdsByRecipeId.value = relNext
+  }
 
   async function load() {
     loading.value = true
     error.value = null
     try {
-      recipes.value = await repo.listRecipes()
+      const list = await repo.listRecipes()
+      setRecipes(list)
+      tags.value = await repo.listTags()
+      const rel = await repo.listRecipeTags(list.map((r) => r.id))
+      const map = new Map<string, string[]>()
+      for (const x of rel) map.set(x.recipe_id, [...(map.get(x.recipe_id) ?? []), x.tag_id])
+      recipeTagIdsByRecipeId.value = map
     } catch (e) {
       error.value = e instanceof Error ? e.message : String(e)
-      recipes.value = []
+      setRecipes([])
+      tags.value = []
+      recipeTagIdsByRecipeId.value = new Map()
     } finally {
       loading.value = false
       ready.value = true
@@ -49,12 +103,6 @@ export const useRecipeStore = defineStore('recipes', () => {
 
   // 启动时拉取一次
   void load()
-
-  const recipeById = computed(() => {
-    const map = new Map<string, Recipe>()
-    for (const r of recipes.value) map.set(r.id, r)
-    return map
-  })
 
   function listFiltered(filter: RecipeListFilter): Recipe[] {
     const today = new Date()
@@ -77,7 +125,13 @@ export const useRecipeStore = defineStore('recipes', () => {
   }
 
   async function refresh() {
-    recipes.value = await repo.listRecipes()
+    const list = await repo.listRecipes()
+    setRecipes(list)
+    tags.value = await repo.listTags()
+    const rel = await repo.listRecipeTags(list.map((r) => r.id))
+    const map = new Map<string, string[]>()
+    for (const x of rel) map.set(x.recipe_id, [...(map.get(x.recipe_id) ?? []), x.tag_id])
+    recipeTagIdsByRecipeId.value = map
   }
 
   async function addRecipe(payload: Omit<Recipe, 'id' | 'createdAt' | 'updatedAt' | 'cookingRecords'>) {
@@ -90,6 +144,69 @@ export const useRecipeStore = defineStore('recipes', () => {
     } catch (e) {
       error.value = e instanceof Error ? e.message : String(e)
       return null
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function setTags(recipeId: string, tagIds: string[]) {
+    loading.value = true
+    error.value = null
+    try {
+      await repo.setRecipeTags(recipeId, tagIds)
+      recipeTagIdsByRecipeId.value = new Map(recipeTagIdsByRecipeId.value).set(recipeId, Array.from(new Set(tagIds)))
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : String(e)
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function createTag(name: string) {
+    loading.value = true
+    error.value = null
+    try {
+      const id = await repo.createTag(name)
+      tags.value = await repo.listTags()
+      return id
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : String(e)
+      return null
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function renameTag(tagId: string, name: string) {
+    loading.value = true
+    error.value = null
+    try {
+      await repo.renameTag(tagId, name)
+      tags.value = await repo.listTags()
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : String(e)
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function deleteTag(tagId: string) {
+    loading.value = true
+    error.value = null
+    try {
+      await repo.deleteTag(tagId)
+      tags.value = await repo.listTags()
+      // 清理本地关联缓存
+      const next = new Map<string, string[]>()
+      for (const [rid, ids] of recipeTagIdsByRecipeId.value.entries()) {
+        next.set(
+          rid,
+          ids.filter((x) => x !== tagId),
+        )
+      }
+      recipeTagIdsByRecipeId.value = next
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : String(e)
     } finally {
       loading.value = false
     }
@@ -113,9 +230,24 @@ export const useRecipeStore = defineStore('recipes', () => {
     error.value = null
     try {
       await repo.deleteRecipe(id)
-      await refresh()
+      removeRecipeLocal(id)
     } catch (e) {
       error.value = e instanceof Error ? e.message : String(e)
+      console.error('deleteRecipe failed', e)
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function deleteRecipes(ids: string[]) {
+    loading.value = true
+    error.value = null
+    try {
+      await repo.deleteRecipes(ids)
+      removeRecipesLocal(ids)
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : String(e)
+      console.error('deleteRecipes failed', e)
     } finally {
       loading.value = false
     }
@@ -128,10 +260,23 @@ export const useRecipeStore = defineStore('recipes', () => {
   async function setPlan(id: string, planKind: PlanKind, planDate: string | null) {
     loading.value = true
     error.value = null
+
+    // 计划切换是高频交互：先本地乐观更新，避免每次都 refresh 全量列表导致卡顿
+    const prev = recipeById.value.get(id) ?? null
+    if (prev) {
+      updateRecipeLocal({
+        ...prev,
+        planKind,
+        planDate: planKind === 'by_date' ? planDate : null,
+        updatedAt: new Date().toISOString(),
+      })
+    }
+
     try {
       await repo.setPlan(id, planKind, planDate)
-      await refresh()
     } catch (e) {
+      // 回滚乐观更新
+      if (prev) updateRecipeLocal(prev)
       error.value = e instanceof Error ? e.message : String(e)
     } finally {
       loading.value = false
@@ -190,6 +335,8 @@ export const useRecipeStore = defineStore('recipes', () => {
     repoMode: repo.mode,
     recipes,
     recipeById,
+    tags,
+    recipeTagIdsByRecipeId,
     loading,
     ready,
     error,
@@ -198,8 +345,13 @@ export const useRecipeStore = defineStore('recipes', () => {
     addRecipe,
     updateRecipe,
     deleteRecipe,
+    deleteRecipes,
     setCooked,
     setPlan,
+    setTags,
+    createTag,
+    renameTag,
+    deleteTag,
     addCookingRecord,
     updateCookingRecord,
     deleteCookingRecord,

@@ -22,3 +22,16 @@ export interface DbCookingRecordRow {
   created_at: string // timestamptz ISO
 }
 
+export interface DbTagRow {
+  id: string // uuid
+  name: string
+  color: string | null
+  created_at: string // timestamptz ISO
+}
+
+export interface DbRecipeTagRow {
+  recipe_id: string // uuid
+  tag_id: string // uuid
+  created_at: string // timestamptz ISO
+}
+

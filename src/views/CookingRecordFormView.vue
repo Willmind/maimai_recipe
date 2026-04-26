@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, useTemplateRef } from 'vue'
 import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router'
+import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import { filesToStoredUrls } from '@/composables/useStoredImages'
 import { useRecipeStore } from '@/stores/recipes'
 
@@ -19,6 +20,8 @@ const note = ref('')
 const cookedAt = ref('')
 const saving = ref(false)
 const initialSnapshot = ref('')
+const showLeaveConfirm = ref(false)
+const leaveResolver = ref<((ok: boolean) => void) | null>(null)
 
 const fileInput = useTemplateRef('fileInput')
 
@@ -79,8 +82,18 @@ onBeforeUnmount(() => {
 
 onBeforeRouteLeave(() => {
   if (!isDirty.value || saving.value) return true
-  return window.confirm('当前记录还没保存，确定要离开吗？')
+  showLeaveConfirm.value = true
+  return new Promise<boolean>((resolve) => {
+    leaveResolver.value = resolve
+  })
 })
+
+function confirmLeave(ok: boolean) {
+  const r = leaveResolver.value
+  leaveResolver.value = null
+  showLeaveConfirm.value = false
+  r?.(ok)
+}
 
 async function onFiles(e: Event) {
   const input = e.target as HTMLInputElement
@@ -163,6 +176,16 @@ async function save() {
       </div>
     </form>
   </div>
+
+  <ConfirmDialog
+    v-model:open="showLeaveConfirm"
+    title="放弃未保存的记录？"
+    message="你刚才的图片和文字还没保存，离开后会丢失。"
+    confirm-text="离开"
+    cancel-text="继续编辑"
+    @confirm="confirmLeave(true)"
+    @cancel="confirmLeave(false)"
+  />
 </template>
 
 <style scoped>
@@ -280,20 +303,39 @@ async function save() {
   gap: 0.6rem;
   position: sticky;
   bottom: 0;
-  padding: 0.85rem 0 calc(0.85rem + env(safe-area-inset-bottom, 0px));
+  padding: 1.85rem 0 calc(0.85rem + env(safe-area-inset-bottom, 0px));
   background: linear-gradient(180deg, rgba(246, 240, 230, 0), rgba(246, 240, 230, 0.92) 24%, rgba(246, 240, 230, 1));
+}
+
+.actions .ghost,
+.actions .primary {
+  min-width: 4.75rem;
 }
 
 .primary {
   cursor: pointer;
   border: none;
   border-radius: 999px;
-  min-height: 2.75rem;
-  padding: 0.55rem 1.35rem;
+  height: 2.75rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 1.35rem;
   background: var(--color-accent);
   color: #fffdf8;
   font-family: var(--font-display);
   font-weight: 600;
+  font-size: 0.92rem;
+  line-height: 1;
+  box-shadow: 0 4px 14px rgba(196, 92, 62, 0.28);
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 26px rgba(196, 92, 62, 0.38);
 }
 
 .ghost {
@@ -301,14 +343,44 @@ async function save() {
   border: 1px solid var(--color-line);
   background: transparent;
   border-radius: 999px;
-  min-height: 2.75rem;
-  padding: 0.5rem 1rem;
+  height: 2.75rem;
+  box-sizing: border-box;
+  appearance: none;
+  -webkit-appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 1rem;
   color: var(--color-ink-muted);
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.92rem;
+  line-height: 1;
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    border-color 0.18s ease,
+    color 0.18s ease,
+    background 0.18s ease;
+}
+
+.ghost:hover {
+  transform: translateY(-1px);
+  border-color: rgba(196, 92, 62, 0.35);
+  color: var(--color-accent);
+  background: rgba(255, 253, 248, 0.7);
+  box-shadow: 0 10px 22px rgba(31, 20, 12, 0.08);
 }
 
 .primary:disabled,
 .ghost:disabled {
   cursor: wait;
   opacity: 0.7;
+}
+
+.primary:disabled:hover,
+.ghost:disabled:hover {
+  transform: none;
+  box-shadow: none;
 }
 </style>

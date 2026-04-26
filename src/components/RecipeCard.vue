@@ -2,20 +2,42 @@
 import { RouterLink } from 'vue-router'
 import type { Recipe } from '@/types/recipe'
 
-defineProps<{ recipe: Recipe }>()
+const props = withDefaults(
+  defineProps<{
+    recipe: Recipe
+    selectMode?: boolean
+    selected?: boolean
+  }>(),
+  {
+    selectMode: false,
+    selected: false,
+  },
+)
+
+const emit = defineEmits<{
+  toggle: [id: string]
+}>()
 
 function planLabel(r: Recipe): string | null {
   if (r.planKind === 'this_week') return '本周计划'
   if (r.planKind === 'by_date' && r.planDate) return `计划 · ${r.planDate}`
   return null
 }
+
+function onToggle() {
+  emit('toggle', props.recipe.id)
+}
 </script>
 
 <template>
-  <RouterLink
-    :to="`/recipes/${recipe.id}`"
+  <component
+    :is="selectMode ? 'button' : RouterLink"
+    :to="selectMode ? undefined : `/recipes/${recipe.id}`"
+    type="button"
     class="card animate-rise"
-    :aria-label="`打开菜谱：${recipe.title}`"
+    :class="{ selected: selectMode && selected, 'select-mode': selectMode }"
+    :aria-label="selectMode ? `选择菜谱：${recipe.title}` : `打开菜谱：${recipe.title}`"
+    @click="selectMode ? onToggle() : undefined"
   >
     <div class="cover-link">
       <div class="cover">
@@ -32,7 +54,10 @@ function planLabel(r: Recipe): string | null {
         <span class="count">{{ recipe.cookingRecords.length }} 条记录</span>
       </div>
     </div>
-  </RouterLink>
+    <span v-if="selectMode" class="check" aria-hidden="true">
+      <span class="dot" />
+    </span>
+  </component>
 </template>
 
 <style scoped>
@@ -48,9 +73,25 @@ function planLabel(r: Recipe): string | null {
   display: flex;
   flex-direction: column;
   text-decoration: none;
+  cursor: pointer;
   transition:
     transform 0.2s ease,
     box-shadow 0.2s ease;
+}
+
+.card.selected {
+  border-color: rgba(196, 92, 62, 0.55);
+  box-shadow:
+    0 0 0 3px rgba(196, 92, 62, 0.12),
+    0 18px 48px rgba(31, 20, 12, 0.1);
+}
+
+.card[type='button'] {
+  width: 100%;
+  text-align: left;
+  padding: 0;
+  appearance: none;
+  -webkit-appearance: none;
 }
 
 .card:hover {
@@ -58,9 +99,48 @@ function planLabel(r: Recipe): string | null {
   box-shadow: 0 18px 48px rgba(31, 20, 12, 0.1);
 }
 
+.card.select-mode:hover {
+  transform: none;
+  box-shadow: 0 12px 36px rgba(31, 20, 12, 0.06);
+}
+
+.card.select-mode.selected:hover {
+  border-color: rgba(196, 92, 62, 0.55);
+  box-shadow:
+    0 0 0 3px rgba(196, 92, 62, 0.12),
+    0 18px 48px rgba(31, 20, 12, 0.1);
+}
+
 .card:focus-visible {
   outline: 2px solid var(--color-accent);
   outline-offset: 3px;
+}
+
+.check {
+  position: absolute;
+  top: 0.65rem;
+  right: 0.65rem;
+  width: 1.8rem;
+  height: 1.8rem;
+  border-radius: 999px;
+  border: 1px solid rgba(31, 20, 12, 0.18);
+  background: rgba(255, 253, 248, 0.92);
+  display: grid;
+  place-items: center;
+  box-shadow: 0 8px 18px rgba(31, 20, 12, 0.08);
+}
+
+.dot {
+  width: 0.95rem;
+  height: 0.95rem;
+  border-radius: 999px;
+  background: transparent;
+  border: 2px solid rgba(196, 92, 62, 0.35);
+}
+
+.card.selected .dot {
+  background: var(--color-accent);
+  border-color: transparent;
 }
 
 .cover-link {
@@ -104,6 +184,10 @@ function planLabel(r: Recipe): string | null {
 
 .card:hover .title {
   color: var(--color-accent);
+}
+
+.card.select-mode:hover .title {
+  color: var(--color-ink);
 }
 
 .meta {

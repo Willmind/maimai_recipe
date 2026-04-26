@@ -1,8 +1,8 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { createId } from '@/lib/id'
 import { isSupabaseConfigured, supabase } from '@/lib/supabase'
-import type { CookingRecord, PlanKind, Recipe } from '@/types/recipe'
-import type { DbCookingRecordRow, DbPlanKind, DbRecipeRow } from './supabaseTypes'
+import type { CookingRecord, PlanKind, Recipe, Tag } from '@/types/recipe'
+import type { DbCookingRecordRow, DbPlanKind, DbRecipeRow, DbRecipeTagRow, DbTagRow } from './supabaseTypes'
 
 export type RepoMode = 'supabase' | 'local'
 
@@ -12,9 +12,18 @@ export interface RecipesRepo {
   listRecipes(): Promise<Recipe[]>
   getRecipe(id: string): Promise<Recipe | null>
 
+  listTags(): Promise<Tag[]>
+  listRecipeTags(recipeIds: string[]): Promise<DbRecipeTagRow[]>
+  setRecipeTags(recipeId: string, tagIds: string[]): Promise<void>
+
+  createTag(name: string): Promise<string>
+  renameTag(tagId: string, name: string): Promise<void>
+  deleteTag(tagId: string): Promise<void>
+
   createRecipe(payload: Omit<Recipe, 'id' | 'createdAt' | 'updatedAt' | 'cookingRecords'>): Promise<string>
   updateRecipe(id: string, patch: Partial<Omit<Recipe, 'id' | 'createdAt'>>): Promise<void>
   deleteRecipe(id: string): Promise<void>
+  deleteRecipes(ids: string[]): Promise<void>
 
   setCooked(id: string, cooked: boolean): Promise<void>
   setPlan(id: string, planKind: PlanKind, planDate: string | null): Promise<void>
@@ -68,6 +77,10 @@ function recipeFromDb(row: DbRecipeRow, records: DbCookingRecordRow[]): Recipe {
   }
 }
 
+function tagFromDb(row: DbTagRow): Tag {
+  return { id: row.id, name: row.name, color: row.color, createdAt: row.created_at }
+}
+
 function safeParseRecipes(raw: string | null): Recipe[] {
   if (!raw) return []
   try {
@@ -78,6 +91,37 @@ function safeParseRecipes(raw: string | null): Recipe[] {
 }
 
 function createLocalStorageRepo(): RecipesRepo {
+  async function listTags(): Promise<Tag[]> {
+    return []
+  }
+
+  async function listRecipeTags(recipeIds: string[]): Promise<DbRecipeTagRow[]> {
+    void recipeIds
+    return []
+  }
+
+  async function setRecipeTags(recipeId: string, tagIds: string[]): Promise<void> {
+    void recipeId
+    void tagIds
+    // local 模式不做 tags
+  }
+
+  async function createTag(name: string): Promise<string> {
+    void name
+    throw new Error('local 模式不支持标签维护')
+  }
+
+  async function renameTag(tagId: string, name: string): Promise<void> {
+    void tagId
+    void name
+    throw new Error('local 模式不支持标签维护')
+  }
+
+  async function deleteTag(tagId: string): Promise<void> {
+    void tagId
+    throw new Error('local 模式不支持标签维护')
+  }
+
   async function listRecipes(): Promise<Recipe[]> {
     return safeParseRecipes(localStorage.getItem(STORAGE_KEY))
   }
@@ -126,6 +170,12 @@ function createLocalStorageRepo(): RecipesRepo {
   async function deleteRecipe(id: string): Promise<void> {
     const all = await listRecipes()
     await writeAll(all.filter((x) => x.id !== id))
+  }
+
+  async function deleteRecipes(ids: string[]): Promise<void> {
+    const set = new Set(ids)
+    const all = await listRecipes()
+    await writeAll(all.filter((x) => !set.has(x.id)))
   }
 
   async function setCooked(id: string, cooked: boolean): Promise<void> {
@@ -192,11 +242,18 @@ function createLocalStorageRepo(): RecipesRepo {
 
   return {
     mode: 'local',
+    listTags,
+    listRecipeTags,
+    setRecipeTags,
+    createTag,
+    renameTag,
+    deleteTag,
     listRecipes,
     getRecipe,
     createRecipe,
     updateRecipe,
     deleteRecipe,
+    deleteRecipes,
     setCooked,
     setPlan,
     addCookingRecord,
@@ -206,6 +263,49 @@ function createLocalStorageRepo(): RecipesRepo {
 }
 
 function createSupabaseRepo(client: SupabaseClient): RecipesRepo {
+  async function listTags(): Promise<Tag[]> {
+    const { data, error } = await client.from('tags').select('*').order('name', { ascending: true })
+    if (error) throw error
+    return ((data ?? []) as DbTagRow[]).map(tagFromDb)
+  }
+
+  async function listRecipeTags(recipeIds: string[]): Promise<DbRecipeTagRow[]> {
+    if (!recipeIds.length) return []
+    const { data, error } = await client
+      .from('recipe_tags')
+      .select('recipe_id,tag_id,created_at')
+      .in('recipe_id', recipeIds)
+    if (error) throw error
+    return (data ?? []) as DbRecipeTagRow[]
+  }
+
+  async function setRecipeTags(recipeId: string, tagIds: string[]): Promise<void> {
+    const { error: e0 } = await client.from('recipe_tags').delete().eq('recipe_id', recipeId)
+    if (e0) throw e0
+
+    const uniq = Array.from(new Set(tagIds)).filter(Boolean)
+    if (!uniq.length) return
+
+    const { error: e1 } = await client.from('recipe_tags').insert(uniq.map((tid) => ({ recipe_id: recipeId, tag_id: tid })))
+    if (e1) throw e1
+  }
+
+  async function createTag(name: string): Promise<string> {
+    const { data, error } = await client.from('tags').insert({ name: name.trim() }).select('id').single()
+    if (error) throw error
+    return String((data as { id: string }).id)
+  }
+
+  async function renameTag(tagId: string, name: string): Promise<void> {
+    const { error } = await client.from('tags').update({ name: name.trim() }).eq('id', tagId)
+    if (error) throw error
+  }
+
+  async function deleteTag(tagId: string): Promise<void> {
+    const { error } = await client.from('tags').delete().eq('id', tagId)
+    if (error) throw error
+  }
+
   async function listRecipes(): Promise<Recipe[]> {
     const { data: recipes, error: e0 } = await client
       .from('recipes')
@@ -289,7 +389,22 @@ function createSupabaseRepo(client: SupabaseClient): RecipesRepo {
   }
 
   async function deleteRecipe(id: string): Promise<void> {
+    // 若 DB 外键未设置 ON DELETE CASCADE，需先删子表再删 recipes
+    const { error: e0 } = await client.from('cooking_records').delete().eq('recipe_id', id)
+    if (e0) throw e0
+
     const { error } = await client.from('recipes').delete().eq('id', id)
+    if (error) throw error
+  }
+
+  async function deleteRecipes(ids: string[]): Promise<void> {
+    const uniq = Array.from(new Set(ids)).filter(Boolean)
+    if (!uniq.length) return
+
+    const { error: e0 } = await client.from('cooking_records').delete().in('recipe_id', uniq)
+    if (e0) throw e0
+
+    const { error } = await client.from('recipes').delete().in('id', uniq)
     if (error) throw error
   }
 
@@ -351,11 +466,18 @@ function createSupabaseRepo(client: SupabaseClient): RecipesRepo {
 
   return {
     mode: 'supabase',
+    listTags,
+    listRecipeTags,
+    setRecipeTags,
+    createTag,
+    renameTag,
+    deleteTag,
     listRecipes,
     getRecipe,
     createRecipe,
     updateRecipe,
     deleteRecipe,
+    deleteRecipes,
     setCooked,
     setPlan,
     addCookingRecord,

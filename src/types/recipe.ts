@@ -1,6 +1,13 @@
 /** 计划类型：无 / 本周要做 / 指定日期 */
 export type PlanKind = 'none' | 'this_week' | 'by_date'
 
+export interface Tag {
+  id: string
+  name: string
+  color?: string | null
+  createdAt?: string
+}
+
 export interface CookingRecord {
   id: string
   recipeId: string
