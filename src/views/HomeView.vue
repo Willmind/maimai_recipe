@@ -49,6 +49,9 @@ const list = computed(() => {
 })
 
 const hasActiveSearch = computed(() => Boolean(titleQuery.value.trim()))
+
+const isInitialLoading = computed(() => !store.ready)
+const skeletonCount = 8
 </script>
 
 <template>
@@ -88,6 +91,22 @@ const hasActiveSearch = computed(() => Boolean(titleQuery.value.trim()))
 
     <div v-if="list.length" class="grid animate-rise-stagger">
       <RecipeCard v-for="r in list" :key="r.id" :recipe="r" />
+    </div>
+    <div
+      v-else-if="isInitialLoading"
+      class="grid skeleton-grid animate-rise"
+      aria-busy="true"
+      aria-live="polite"
+      aria-label="正在加载菜谱"
+    >
+      <div v-for="i in skeletonCount" :key="i" class="skeleton-card" aria-hidden="true">
+        <div class="sk-cover shimmer" />
+        <div class="sk-lines">
+          <div class="sk-line shimmer" />
+          <div class="sk-line short shimmer" />
+        </div>
+      </div>
+      <span class="sr-only">加载中…</span>
     </div>
     <p v-else class="empty animate-rise">
       <template v-if="hasActiveSearch">没有标题匹配当前搜索的菜谱。</template>
@@ -197,6 +216,69 @@ const hasActiveSearch = computed(() => Boolean(titleQuery.value.trim()))
   gap: 0.75rem;
   /* 窄屏（如 iPhone 12/16 Pro）固定两列，避免 minmax(260px) 挤成单列 */
   grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.skeleton-grid {
+  align-items: stretch;
+}
+
+.skeleton-card {
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-elevated);
+  overflow: hidden;
+}
+
+.sk-cover {
+  aspect-ratio: 4 / 3;
+  background: linear-gradient(
+    135deg,
+    rgba(196, 92, 62, 0.12),
+    rgba(74, 93, 62, 0.09)
+  );
+}
+
+.sk-lines {
+  padding: 0.75rem 0.9rem 0.95rem;
+  display: grid;
+  gap: 0.55rem;
+}
+
+.sk-line {
+  height: 12px;
+  border-radius: 999px;
+  background: rgba(31, 20, 12, 0.05);
+}
+
+.sk-line.short {
+  width: 68%;
+}
+
+.shimmer {
+  background-image: linear-gradient(
+    90deg,
+    rgba(196, 92, 62, 0.08) 0%,
+    rgba(255, 253, 248, 0.6) 35%,
+    rgba(74, 93, 62, 0.08) 70%,
+    rgba(196, 92, 62, 0.08) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.1s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shimmer {
+    animation: none;
+  }
 }
 
 @media (min-width: 720px) {

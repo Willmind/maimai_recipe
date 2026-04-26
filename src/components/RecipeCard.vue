@@ -12,15 +12,19 @@ function planLabel(r: Recipe): string | null {
 </script>
 
 <template>
-  <article class="card animate-rise">
-    <RouterLink :to="`/recipes/${recipe.id}`" class="cover-link">
+  <RouterLink
+    :to="`/recipes/${recipe.id}`"
+    class="card animate-rise"
+    :aria-label="`打开菜谱：${recipe.title}`"
+  >
+    <div class="cover-link">
       <div class="cover">
         <img v-if="recipe.coverImage" :src="recipe.coverImage" :alt="recipe.title" />
         <div v-else class="cover-placeholder">暂无封面</div>
       </div>
-    </RouterLink>
+    </div>
     <div class="body">
-      <RouterLink :to="`/recipes/${recipe.id}`" class="title">{{ recipe.title }}</RouterLink>
+      <div class="title">{{ recipe.title }}</div>
       <div class="meta">
         <span v-if="recipe.cooked" class="pill done">做过</span>
         <span v-else class="pill todo">未做</span>
@@ -28,7 +32,7 @@ function planLabel(r: Recipe): string | null {
         <span class="count">{{ recipe.cookingRecords.length }} 条记录</span>
       </div>
     </div>
-  </article>
+  </RouterLink>
 </template>
 
 <style scoped>
@@ -43,6 +47,7 @@ function planLabel(r: Recipe): string | null {
   box-shadow: 0 12px 36px rgba(31, 20, 12, 0.06);
   display: flex;
   flex-direction: column;
+  text-decoration: none;
   transition:
     transform 0.2s ease,
     box-shadow 0.2s ease;
@@ -51,6 +56,11 @@ function planLabel(r: Recipe): string | null {
 .card:hover {
   transform: translateY(-3px);
   box-shadow: 0 18px 48px rgba(31, 20, 12, 0.1);
+}
+
+.card:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 3px;
 }
 
 .cover-link {
@@ -92,7 +102,7 @@ function planLabel(r: Recipe): string | null {
   overflow-wrap: anywhere;
 }
 
-.title:hover {
+.card:hover .title {
   color: var(--color-accent);
 }
 
