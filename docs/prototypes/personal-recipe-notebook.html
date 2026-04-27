@@ -1,0 +1,640 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>麦麦手记 · 个人菜谱记录本原型</title>
+    <style>
+      :root {
+        --paper: #fbf7ef;
+        --paper-deep: #f1e7d8;
+        --ink: #251912;
+        --muted: #756457;
+        --line: rgba(37, 25, 18, 0.13);
+        --tomato: #c85d3f;
+        --olive: #5b6845;
+        --gold: #d5a64f;
+        --white: #fffdf8;
+        --shadow: 0 18px 42px rgba(54, 36, 20, 0.1);
+        --radius: 18px;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        color: var(--ink);
+        background:
+          linear-gradient(180deg, rgba(255, 253, 248, 0.8), rgba(241, 231, 216, 0.88)),
+          repeating-linear-gradient(
+            0deg,
+            transparent,
+            transparent 30px,
+            rgba(37, 25, 18, 0.035) 30px,
+            rgba(37, 25, 18, 0.035) 31px
+          ),
+          var(--paper);
+        font-family: Georgia, "Songti SC", "Noto Serif CJK SC", serif;
+        line-height: 1.55;
+      }
+
+      button,
+      input,
+      textarea {
+        font: inherit;
+      }
+
+      .shell {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 28px 18px 56px;
+      }
+
+      .top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 18px;
+        margin-bottom: 28px;
+      }
+
+      .brand {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+
+      .brand strong {
+        font-size: 28px;
+        letter-spacing: 0;
+      }
+
+      .brand span {
+        color: var(--muted);
+        font-size: 15px;
+      }
+
+      .primary-action {
+        border: 0;
+        border-radius: 999px;
+        background: var(--tomato);
+        color: var(--white);
+        padding: 12px 18px;
+        box-shadow: 0 8px 20px rgba(200, 93, 63, 0.25);
+        cursor: pointer;
+      }
+
+      .prototype-grid {
+        display: grid;
+        gap: 24px;
+      }
+
+      @media (min-width: 980px) {
+        .prototype-grid {
+          grid-template-columns: 1.05fr 0.95fr;
+          align-items: start;
+        }
+      }
+
+      .screen {
+        background: rgba(255, 253, 248, 0.82);
+        border: 1px solid var(--line);
+        border-radius: 26px;
+        box-shadow: var(--shadow);
+        overflow: hidden;
+      }
+
+      .screen-title {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+        padding: 16px 18px;
+        border-bottom: 1px solid var(--line);
+        background: rgba(255, 253, 248, 0.7);
+      }
+
+      .screen-title h2 {
+        margin: 0;
+        font-size: 18px;
+      }
+
+      .screen-title span {
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .screen-body {
+        padding: 18px;
+      }
+
+      .search {
+        width: 100%;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        padding: 13px 16px;
+        background: var(--white);
+        color: var(--ink);
+      }
+
+      .quick {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+        margin: 16px 0 22px;
+      }
+
+      .quick button {
+        min-height: 76px;
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        background: var(--white);
+        color: var(--ink);
+        text-align: left;
+        padding: 13px;
+        cursor: pointer;
+      }
+
+      .quick strong {
+        display: block;
+        font-size: 17px;
+      }
+
+      .quick span {
+        display: block;
+        margin-top: 3px;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .section-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin: 20px 0 10px;
+      }
+
+      .section-head h3 {
+        margin: 0;
+        font-size: 18px;
+      }
+
+      .section-head a {
+        color: var(--tomato);
+        font-size: 14px;
+        text-decoration: none;
+      }
+
+      .record-list,
+      .recipe-list {
+        display: grid;
+        gap: 10px;
+      }
+
+      .record-item,
+      .recipe-item {
+        display: grid;
+        grid-template-columns: 82px 1fr;
+        gap: 12px;
+        align-items: center;
+        padding: 10px;
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        background: rgba(255, 253, 248, 0.78);
+      }
+
+      .photo {
+        min-height: 72px;
+        border-radius: 13px;
+        background:
+          linear-gradient(135deg, rgba(200, 93, 63, 0.18), rgba(91, 104, 69, 0.16)),
+          var(--paper-deep);
+      }
+
+      .item-title {
+        margin: 0;
+        font-size: 17px;
+      }
+
+      .item-meta {
+        margin: 4px 0 0;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 8px;
+      }
+
+      .tag {
+        border-radius: 999px;
+        background: rgba(91, 104, 69, 0.12);
+        color: var(--olive);
+        padding: 3px 8px;
+        font-size: 12px;
+      }
+
+      .detail-hero {
+        display: grid;
+        gap: 16px;
+      }
+
+      @media (min-width: 720px) {
+        .detail-hero {
+          grid-template-columns: 0.9fr 1.1fr;
+        }
+      }
+
+      .hero-photo {
+        aspect-ratio: 4 / 3;
+        border-radius: 20px;
+        background:
+          radial-gradient(circle at 28% 22%, rgba(255, 253, 248, 0.72), transparent 22%),
+          linear-gradient(135deg, rgba(200, 93, 63, 0.24), rgba(213, 166, 79, 0.2)),
+          var(--paper-deep);
+      }
+
+      .detail-copy h1 {
+        margin: 0 0 8px;
+        font-size: 32px;
+        line-height: 1.15;
+      }
+
+      .detail-copy p {
+        margin: 0 0 14px;
+        color: var(--muted);
+      }
+
+      .detail-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .pill-button {
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: var(--white);
+        padding: 9px 13px;
+        color: var(--ink);
+      }
+
+      .pill-button.main {
+        border-color: transparent;
+        background: var(--tomato);
+        color: var(--white);
+      }
+
+      .note-band {
+        margin-top: 18px;
+        padding: 14px;
+        border-left: 4px solid var(--gold);
+        border-radius: 14px;
+        background: rgba(213, 166, 79, 0.13);
+      }
+
+      .two-col {
+        display: grid;
+        gap: 14px;
+        margin-top: 18px;
+      }
+
+      @media (min-width: 720px) {
+        .two-col {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+
+      .paper-card {
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        background: rgba(255, 253, 248, 0.7);
+        padding: 15px;
+      }
+
+      .paper-card h3 {
+        margin: 0 0 10px;
+        font-size: 18px;
+      }
+
+      .paper-card ul,
+      .paper-card ol {
+        margin: 0;
+        padding-left: 20px;
+      }
+
+      .timeline {
+        display: grid;
+        gap: 12px;
+        margin-top: 12px;
+      }
+
+      .timeline-card {
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        background: var(--white);
+        padding: 14px;
+      }
+
+      .timeline-top {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .timeline-card p {
+        margin: 8px 0 0;
+      }
+
+      .result {
+        color: var(--olive);
+        font-weight: 700;
+      }
+
+      .form-grid {
+        display: grid;
+        gap: 13px;
+      }
+
+      .field {
+        display: grid;
+        gap: 6px;
+      }
+
+      .field label {
+        font-weight: 700;
+      }
+
+      .field small {
+        color: var(--muted);
+        font-weight: 400;
+      }
+
+      .field input,
+      .field textarea {
+        width: 100%;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        background: var(--white);
+        padding: 11px 12px;
+        color: var(--ink);
+      }
+
+      .field textarea {
+        min-height: 92px;
+        resize: vertical;
+      }
+
+      .result-row {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+      }
+
+      .result-row button {
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        background: var(--white);
+        padding: 10px 8px;
+      }
+
+      .result-row button.active {
+        border-color: rgba(91, 104, 69, 0.45);
+        background: rgba(91, 104, 69, 0.13);
+        color: var(--olive);
+        font-weight: 700;
+      }
+
+      .wide {
+        grid-column: 1 / -1;
+      }
+
+      .caption {
+        max-width: 760px;
+        margin: 0 0 22px;
+        color: var(--muted);
+      }
+    </style>
+  </head>
+  <body>
+    <main class="shell">
+      <header class="top">
+        <div class="brand">
+          <strong>麦麦手记</strong>
+          <span>个人菜谱记录本 · 原型草案</span>
+        </div>
+        <button class="primary-action" type="button">记一道菜</button>
+      </header>
+
+      <p class="caption">
+        这个原型把产品从“管理菜谱”调整为“记录自己的厨房经验”：首页看最近与想做，详情页看当前最佳版本，记录页像日记。
+      </p>
+
+      <section class="prototype-grid">
+        <article class="screen">
+          <div class="screen-title">
+            <h2>首页：我的厨房笔记</h2>
+            <span>高频入口：找菜、想做、最近记录</span>
+          </div>
+          <div class="screen-body">
+            <input class="search" value="" placeholder="今天想找哪道菜？试试 番茄、快手、下饭" />
+
+            <div class="quick">
+              <button type="button">
+                <strong>最近做过</strong>
+                <span>翻看刚记录的经验</span>
+              </button>
+              <button type="button">
+                <strong>想做</strong>
+                <span>这些菜等着开火</span>
+              </button>
+              <button type="button">
+                <strong>随机一道</strong>
+                <span>不知道吃什么时用</span>
+              </button>
+              <button type="button">
+                <strong>全部菜谱</strong>
+                <span>按菜名和标签找</span>
+              </button>
+            </div>
+
+            <div class="section-head">
+              <h3>最近记录</h3>
+              <a href="#">查看全部</a>
+            </div>
+            <div class="record-list">
+              <div class="record-item">
+                <div class="photo"></div>
+                <div>
+                  <p class="item-title">番茄炒蛋</p>
+                  <p class="item-meta">昨天 · 这次糖少一点，更清爽</p>
+                  <div class="tags">
+                    <span class="tag">好吃</span>
+                    <span class="tag">下次少油</span>
+                  </div>
+                </div>
+              </div>
+              <div class="record-item">
+                <div class="photo"></div>
+                <div>
+                  <p class="item-title">葱油拌面</p>
+                  <p class="item-meta">周六 · 葱要再煸久一点</p>
+                  <div class="tags">
+                    <span class="tag">快手</span>
+                    <span class="tag">稳定复做</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="section-head">
+              <h3>想做</h3>
+              <a href="#">换一批</a>
+            </div>
+            <div class="recipe-list">
+              <div class="recipe-item">
+                <div class="photo"></div>
+                <div>
+                  <p class="item-title">照烧鸡腿饭</p>
+                  <p class="item-meta">适合晚饭 · 已收藏 12 天</p>
+                </div>
+              </div>
+              <div class="recipe-item">
+                <div class="photo"></div>
+                <div>
+                  <p class="item-title">蒜香口蘑</p>
+                  <p class="item-meta">15 分钟 · 需要买口蘑</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <article class="screen">
+          <div class="screen-title">
+            <h2>记录一次：像写厨房日记</h2>
+            <span>重点不是填表，是复盘</span>
+          </div>
+          <div class="screen-body">
+            <div class="form-grid">
+              <div class="field">
+                <label>这次做的是</label>
+                <input value="番茄炒蛋" />
+              </div>
+              <div class="field">
+                <label>日期</label>
+                <input value="2026-04-27" />
+              </div>
+              <div class="field">
+                <label>成品照片 <small>拍一张就够，也可以多张</small></label>
+                <button class="pill-button" type="button">添加照片</button>
+              </div>
+              <div class="field">
+                <label>这次做得怎么样？</label>
+                <div class="result-row">
+                  <button class="active" type="button">好吃</button>
+                  <button type="button">一般</button>
+                  <button type="button">翻车</button>
+                </div>
+              </div>
+              <div class="field">
+                <label>这次记录</label>
+                <textarea>鸡蛋先炒出来，番茄多煮一会儿出汁。最后再合一起，口感更嫩。</textarea>
+              </div>
+              <div class="field">
+                <label>和上次比改了什么？</label>
+                <textarea>糖少放了半勺，盐也晚一点放。</textarea>
+              </div>
+              <div class="field">
+                <label>下次要注意什么？</label>
+                <textarea>番茄可以再切小一点，汤汁会更均匀。</textarea>
+              </div>
+              <button class="primary-action wide" type="button">保存这次记录</button>
+            </div>
+          </div>
+        </article>
+
+        <article class="screen wide">
+          <div class="screen-title">
+            <h2>菜谱详情：当前最佳版本 + 历史时间线</h2>
+            <span>回答“下次照着怎么做”</span>
+          </div>
+          <div class="screen-body">
+            <div class="detail-hero">
+              <div class="hero-photo"></div>
+              <div class="detail-copy">
+                <h1>番茄炒蛋</h1>
+                <p>家里最常做的版本，偏清爽，适合配米饭。目标是番茄汁浓、鸡蛋嫩。</p>
+                <div class="detail-actions">
+                  <button class="pill-button main" type="button">记一次</button>
+                  <button class="pill-button" type="button">想做</button>
+                  <button class="pill-button" type="button">更多</button>
+                </div>
+                <div class="tags">
+                  <span class="tag">家常</span>
+                  <span class="tag">快手</span>
+                  <span class="tag">下饭</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="note-band">
+              <strong>下次注意：</strong>
+              番茄切小一点，先煮出汁再放鸡蛋。糖少放，盐最后调。
+            </div>
+
+            <div class="two-col">
+              <div class="paper-card">
+                <h3>食材</h3>
+                <ul>
+                  <li>番茄 2 个</li>
+                  <li>鸡蛋 3 个</li>
+                  <li>盐、糖、葱花</li>
+                </ul>
+              </div>
+              <div class="paper-card">
+                <h3>当前做法</h3>
+                <ol>
+                  <li>鸡蛋加盐打散，热油炒到刚凝固盛出。</li>
+                  <li>番茄下锅煮出汁，加少量糖。</li>
+                  <li>鸡蛋回锅，最后调盐，撒葱花。</li>
+                </ol>
+              </div>
+            </div>
+
+            <div class="section-head">
+              <h3>做饭记录</h3>
+              <a href="#">新增记录</a>
+            </div>
+            <div class="timeline">
+              <div class="timeline-card">
+                <div class="timeline-top">
+                  <span>2026-04-26</span>
+                  <span class="result">好吃</span>
+                </div>
+                <p>这次糖少放，更清爽。番茄汁还可以再浓一点。</p>
+                <p><strong>下次：</strong>番茄切小，先多煮 1 分钟。</p>
+              </div>
+              <div class="timeline-card">
+                <div class="timeline-top">
+                  <span>2026-04-12</span>
+                  <span>一般</span>
+                </div>
+                <p>鸡蛋炒老了，番茄块也太大，味道有点散。</p>
+                <p><strong>下次：</strong>鸡蛋提前盛出，不要一直在锅里煮。</p>
+              </div>
+            </div>
+          </div>
+        </article>
+      </section>
+    </main>
+  </body>
+</html>
