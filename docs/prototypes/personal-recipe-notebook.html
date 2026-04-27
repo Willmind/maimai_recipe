@@ -92,6 +92,28 @@
         gap: 24px;
       }
 
+      .flow-map {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin: 0 0 24px;
+      }
+
+      .flow-step {
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: rgba(255, 253, 248, 0.76);
+        color: var(--muted);
+        padding: 8px 12px;
+        font-size: 14px;
+      }
+
+      .flow-step.strong {
+        color: var(--ink);
+        background: var(--white);
+        border-color: rgba(200, 93, 63, 0.28);
+      }
+
       @media (min-width: 980px) {
         .prototype-grid {
           grid-template-columns: 1.05fr 0.95fr;
@@ -158,6 +180,12 @@
         cursor: pointer;
       }
 
+      .quick button.active {
+        border-color: rgba(200, 93, 63, 0.42);
+        background: rgba(200, 93, 63, 0.1);
+        box-shadow: 0 8px 18px rgba(200, 93, 63, 0.12);
+      }
+
       .quick strong {
         display: block;
         font-size: 17px;
@@ -192,6 +220,224 @@
       .recipe-list {
         display: grid;
         gap: 10px;
+      }
+
+      .home-panel {
+        display: none;
+      }
+
+      .home-panel.active {
+        display: block;
+      }
+
+      .search-panel {
+        display: none;
+      }
+
+      .search-panel.active {
+        display: block;
+      }
+
+      .search-summary {
+        margin: 16px 0 12px;
+        padding: 12px 14px;
+        border: 1px solid rgba(91, 104, 69, 0.18);
+        border-radius: 16px;
+        background: rgba(91, 104, 69, 0.08);
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      .search-summary strong {
+        color: var(--ink);
+      }
+
+      .empty-state {
+        display: grid;
+        place-items: center;
+        min-height: 220px;
+        border: 1px dashed rgba(37, 25, 18, 0.18);
+        border-radius: 22px;
+        background: rgba(255, 253, 248, 0.58);
+        text-align: center;
+        padding: 24px;
+      }
+
+      .empty-state h3 {
+        margin: 0 0 8px;
+        font-size: 22px;
+      }
+
+      .empty-state p {
+        max-width: 34ch;
+        margin: 0 auto 16px;
+        color: var(--muted);
+      }
+
+      .upload-box {
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        background: var(--white);
+        padding: 14px;
+      }
+
+      .upload-row {
+        display: grid;
+        grid-template-columns: 72px 1fr;
+        gap: 12px;
+        align-items: center;
+      }
+
+      .upload-thumb {
+        width: 72px;
+        height: 72px;
+        border-radius: 14px;
+        background:
+          linear-gradient(135deg, rgba(200, 93, 63, 0.18), rgba(91, 104, 69, 0.16)),
+          var(--paper-deep);
+      }
+
+      .progress {
+        height: 8px;
+        overflow: hidden;
+        border-radius: 999px;
+        background: rgba(37, 25, 18, 0.08);
+        margin-top: 8px;
+      }
+
+      .progress span {
+        display: block;
+        width: 64%;
+        height: 100%;
+        border-radius: inherit;
+        background: var(--olive);
+      }
+
+      .error-note {
+        margin-top: 12px;
+        border: 1px solid rgba(200, 93, 63, 0.24);
+        border-radius: 14px;
+        background: rgba(200, 93, 63, 0.08);
+        color: var(--tomato);
+        padding: 10px 12px;
+        font-size: 14px;
+      }
+
+      .mobile-frame {
+        max-width: 390px;
+        margin: 0 auto;
+        border: 1px solid rgba(37, 25, 18, 0.18);
+        border-radius: 34px;
+        background: #17120f;
+        padding: 12px;
+        box-shadow: var(--shadow);
+      }
+
+      .mobile-screen {
+        border-radius: 24px;
+        background: var(--paper);
+        overflow: hidden;
+      }
+
+      .mobile-inner {
+        padding: 16px;
+      }
+
+      .mobile-top {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: center;
+        margin-bottom: 14px;
+      }
+
+      .mobile-top strong {
+        font-size: 22px;
+      }
+
+      .mobile-cta {
+        border: 0;
+        border-radius: 999px;
+        background: var(--tomato);
+        color: var(--white);
+        padding: 9px 12px;
+        font-size: 14px;
+      }
+
+      .mobile-quick {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+      }
+
+      .mobile-quick button {
+        min-height: 70px;
+        padding: 10px;
+      }
+
+      .panel-note {
+        margin: -4px 0 12px;
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      .random-card {
+        display: grid;
+        gap: 14px;
+        padding: 14px;
+        border: 1px solid rgba(200, 93, 63, 0.22);
+        border-radius: 20px;
+        background: rgba(255, 253, 248, 0.88);
+      }
+
+      @media (min-width: 640px) {
+        .random-card {
+          grid-template-columns: 150px 1fr;
+          align-items: center;
+        }
+      }
+
+      .random-card .photo {
+        min-height: 120px;
+      }
+
+      .random-card h4 {
+        margin: 0;
+        font-size: 24px;
+      }
+
+      .random-card p {
+        margin: 6px 0 0;
+        color: var(--muted);
+      }
+
+      .random-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 12px;
+      }
+
+      .filter-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin: 0 0 12px;
+      }
+
+      .filter-chip {
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: var(--white);
+        color: var(--muted);
+        padding: 7px 11px;
+        font-size: 13px;
+      }
+
+      .filter-chip.active {
+        border-color: rgba(91, 104, 69, 0.38);
+        background: rgba(91, 104, 69, 0.12);
+        color: var(--olive);
+        font-weight: 700;
       }
 
       .record-item,
@@ -413,6 +659,43 @@
         font-weight: 700;
       }
 
+      .tag-picker {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .tag-option {
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: var(--white);
+        color: var(--muted);
+        padding: 8px 11px;
+        cursor: pointer;
+      }
+
+      .tag-option.active {
+        border-color: rgba(91, 104, 69, 0.42);
+        background: rgba(91, 104, 69, 0.13);
+        color: var(--olive);
+        font-weight: 700;
+      }
+
+      .tag-add-row {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 8px;
+      }
+
+      .soft-action {
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        background: var(--white);
+        color: var(--tomato);
+        padding: 10px 12px;
+        white-space: nowrap;
+      }
+
       .wide {
         grid-column: 1 / -1;
       }
@@ -438,6 +721,14 @@
         这个原型把产品从“管理菜谱”调整为“记录自己的厨房经验”：首页看最近与想做，详情页看当前最佳版本，记录页像日记。
       </p>
 
+      <div class="flow-map" aria-label="核心流程">
+        <span class="flow-step strong">首页</span>
+        <span class="flow-step">→ 记一道菜</span>
+        <span class="flow-step">→ 菜谱详情</span>
+        <span class="flow-step">→ 记一次</span>
+        <span class="flow-step">→ 回到详情时间线</span>
+      </div>
+
       <section class="prototype-grid">
         <article class="screen">
           <div class="screen-title">
@@ -445,75 +736,311 @@
             <span>高频入口：找菜、想做、最近记录</span>
           </div>
           <div class="screen-body">
-            <input class="search" value="" placeholder="今天想找哪道菜？试试 番茄、快手、下饭" />
+            <input
+              class="search"
+              data-search-input
+              value=""
+              placeholder="今天想找哪道菜？试试 番茄、快手、下饭"
+            />
 
-            <div class="quick">
-              <button type="button">
+            <section class="search-panel" data-search-panel>
+              <div class="search-summary">
+                搜索 <strong data-search-word>番茄</strong>：找到 <strong>2</strong> 道菜谱、<strong>3</strong> 条做饭记录
+              </div>
+
+              <div class="section-head">
+                <h3>菜谱</h3>
+                <a href="#">只看菜谱</a>
+              </div>
+              <div class="recipe-list">
+                <div class="recipe-item">
+                  <div class="photo"></div>
+                  <div>
+                    <p class="item-title">番茄炒蛋</p>
+                    <p class="item-meta">家常 · 快手 · 做过 8 次</p>
+                    <div class="tags">
+                      <span class="tag">下次：番茄切小一点</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="recipe-item">
+                  <div class="photo"></div>
+                  <div>
+                    <p class="item-title">番茄牛腩</p>
+                    <p class="item-meta">想做 · 需要提前炖</p>
+                    <div class="tags">
+                      <span class="tag">周末菜</span>
+                      <span class="tag">下饭</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="section-head">
+                <h3>做饭记录</h3>
+                <a href="#">只看记录</a>
+              </div>
+              <div class="record-list">
+                <div class="record-item">
+                  <div class="photo"></div>
+                  <div>
+                    <p class="item-title">番茄炒蛋</p>
+                    <p class="item-meta">昨天 · 好吃 · 糖少一点，更清爽</p>
+                    <div class="tags">
+                      <span class="tag">命中：番茄</span>
+                      <span class="tag">下次少油</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="record-item">
+                  <div class="photo"></div>
+                  <div>
+                    <p class="item-title">番茄炒蛋</p>
+                    <p class="item-meta">4 月 12 日 · 一般 · 番茄块太大，味道有点散</p>
+                    <div class="tags">
+                      <span class="tag">命中：番茄块</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="record-item">
+                  <div class="photo"></div>
+                  <div>
+                    <p class="item-title">番茄牛腩</p>
+                    <p class="item-meta">收藏笔记 · 牛腩可以再炖久一点</p>
+                    <div class="tags">
+                      <span class="tag">命中：番茄</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <div class="quick" data-home-default>
+              <button class="active" type="button" data-home-view="recent">
                 <strong>最近做过</strong>
                 <span>翻看刚记录的经验</span>
               </button>
-              <button type="button">
+              <button type="button" data-home-view="want">
                 <strong>想做</strong>
                 <span>这些菜等着开火</span>
               </button>
-              <button type="button">
+              <button type="button" data-home-view="random">
                 <strong>随机一道</strong>
                 <span>不知道吃什么时用</span>
               </button>
-              <button type="button">
+              <button type="button" data-home-view="all">
                 <strong>全部菜谱</strong>
                 <span>按菜名和标签找</span>
               </button>
             </div>
 
-            <div class="section-head">
-              <h3>最近记录</h3>
-              <a href="#">查看全部</a>
-            </div>
-            <div class="record-list">
-              <div class="record-item">
-                <div class="photo"></div>
-                <div>
-                  <p class="item-title">番茄炒蛋</p>
-                  <p class="item-meta">昨天 · 这次糖少一点，更清爽</p>
-                  <div class="tags">
-                    <span class="tag">好吃</span>
-                    <span class="tag">下次少油</span>
+            <section class="home-panel active" data-home-panel="recent" data-home-default>
+              <div class="section-head">
+                <h3>最近做过</h3>
+                <a href="#">按时间排序</a>
+              </div>
+              <p class="panel-note">这里展示的是“做饭记录流”，不是菜谱管理列表。</p>
+              <div class="record-list">
+                <div class="record-item">
+                  <div class="photo"></div>
+                  <div>
+                    <p class="item-title">番茄炒蛋</p>
+                    <p class="item-meta">昨天 · 这次糖少一点，更清爽</p>
+                    <div class="tags">
+                      <span class="tag">好吃</span>
+                      <span class="tag">下次少油</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="record-item">
+                  <div class="photo"></div>
+                  <div>
+                    <p class="item-title">葱油拌面</p>
+                    <p class="item-meta">周六 · 葱要再煸久一点</p>
+                    <div class="tags">
+                      <span class="tag">快手</span>
+                      <span class="tag">稳定复做</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="record-item">
+                  <div class="photo"></div>
+                  <div>
+                    <p class="item-title">红烧排骨</p>
+                    <p class="item-meta">上周三 · 收汁太晚，颜色很好但偏咸</p>
+                    <div class="tags">
+                      <span class="tag">一般</span>
+                      <span class="tag">下次少酱油</span>
+                    </div>
                   </div>
                 </div>
               </div>
-              <div class="record-item">
+            </section>
+
+            <section class="home-panel" data-home-panel="want" data-home-default>
+              <div class="section-head">
+                <h3>想做</h3>
+                <a href="#">只看最近想做</a>
+              </div>
+              <p class="panel-note">这里替代“复杂计划”，更像个人记录本里的待做页。</p>
+              <div class="recipe-list">
+                <div class="recipe-item">
+                  <div class="photo"></div>
+                  <div>
+                    <p class="item-title">照烧鸡腿饭</p>
+                    <p class="item-meta">适合晚饭 · 已收藏 12 天</p>
+                    <div class="tags">
+                      <span class="tag">家常</span>
+                      <span class="tag">晚饭</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="recipe-item">
+                  <div class="photo"></div>
+                  <div>
+                    <p class="item-title">蒜香口蘑</p>
+                    <p class="item-meta">15 分钟 · 需要买口蘑</p>
+                    <div class="tags">
+                      <span class="tag">快手</span>
+                      <span class="tag">素菜</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="recipe-item">
+                  <div class="photo"></div>
+                  <div>
+                    <p class="item-title">冬瓜丸子汤</p>
+                    <p class="item-meta">清淡 · 适合周末试一次</p>
+                    <div class="tags">
+                      <span class="tag">汤</span>
+                      <span class="tag">清淡</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section class="home-panel" data-home-panel="random" data-home-default>
+              <div class="section-head">
+                <h3>随机一道</h3>
+                <a href="#">换一道</a>
+              </div>
+              <p class="panel-note">不是列表，而是给一个“今天可以做它”的轻推荐。</p>
+              <div class="random-card">
                 <div class="photo"></div>
                 <div>
-                  <p class="item-title">葱油拌面</p>
-                  <p class="item-meta">周六 · 葱要再煸久一点</p>
+                  <h4>今天试试：葱油拌面</h4>
+                  <p>上次记录：葱油不够香，葱要再煸久一点。适合不知道吃什么的晚上。</p>
                   <div class="tags">
                     <span class="tag">快手</span>
                     <span class="tag">稳定复做</span>
+                    <span class="tag">15 分钟</span>
+                  </div>
+                  <div class="random-actions">
+                    <button class="pill-button main" type="button">查看菜谱</button>
+                    <button class="pill-button" type="button">换一道</button>
                   </div>
                 </div>
               </div>
-            </div>
+            </section>
 
-            <div class="section-head">
-              <h3>想做</h3>
-              <a href="#">换一批</a>
-            </div>
-            <div class="recipe-list">
-              <div class="recipe-item">
-                <div class="photo"></div>
-                <div>
-                  <p class="item-title">照烧鸡腿饭</p>
-                  <p class="item-meta">适合晚饭 · 已收藏 12 天</p>
+            <section class="home-panel" data-home-panel="all" data-home-default>
+              <div class="section-head">
+                <h3>全部菜谱</h3>
+                <a href="#">按最近更新</a>
+              </div>
+              <div class="filter-row">
+                <button class="filter-chip active" type="button">全部</button>
+                <button class="filter-chip" type="button">家常</button>
+                <button class="filter-chip" type="button">快手</button>
+                <button class="filter-chip" type="button">下饭</button>
+                <button class="filter-chip" type="button">想做</button>
+              </div>
+              <div class="recipe-list">
+                <div class="recipe-item">
+                  <div class="photo"></div>
+                  <div>
+                    <p class="item-title">番茄炒蛋</p>
+                    <p class="item-meta">做过 8 次 · 下次番茄切小一点</p>
+                  </div>
+                </div>
+                <div class="recipe-item">
+                  <div class="photo"></div>
+                  <div>
+                    <p class="item-title">葱油拌面</p>
+                    <p class="item-meta">做过 3 次 · 稳定复做</p>
+                  </div>
+                </div>
+                <div class="recipe-item">
+                  <div class="photo"></div>
+                  <div>
+                    <p class="item-title">照烧鸡腿饭</p>
+                    <p class="item-meta">想做 · 适合晚饭</p>
+                  </div>
                 </div>
               </div>
-              <div class="recipe-item">
-                <div class="photo"></div>
-                <div>
-                  <p class="item-title">蒜香口蘑</p>
-                  <p class="item-meta">15 分钟 · 需要买口蘑</p>
+            </section>
+          </div>
+        </article>
+
+        <article class="screen">
+          <div class="screen-title">
+            <h2>记一道菜：录入当前最佳版本</h2>
+            <span>包含标签，但不要像后台分类</span>
+          </div>
+          <div class="screen-body">
+            <div class="form-grid">
+              <div class="field">
+                <label>菜名</label>
+                <input value="番茄炒蛋" />
+              </div>
+              <div class="field">
+                <label>封面图 <small>可选</small></label>
+                <button class="pill-button" type="button">选择一张图</button>
+              </div>
+              <div class="field">
+                <label>食材 <small>每行一项</small></label>
+                <textarea>番茄 2 个
+鸡蛋 3 个
+葱花少许</textarea>
+              </div>
+              <div class="field">
+                <label>当前做法 <small>写成自己下次看得懂的版本</small></label>
+                <textarea>鸡蛋先炒到刚凝固，盛出。
+番茄下锅煮出汁，再放鸡蛋回锅。
+最后调盐，撒葱花。</textarea>
+              </div>
+              <div class="field">
+                <label>小贴士 / 下次注意</label>
+                <textarea>番茄切小一点更容易出汁。糖少放，盐最后调。</textarea>
+              </div>
+              <div class="field">
+                <label>状态</label>
+                <div class="result-row">
+                  <button class="active" type="button">想做</button>
+                  <button type="button">做过</button>
+                  <button type="button">常做</button>
                 </div>
               </div>
+              <div class="field">
+                <label>标签 <small>像贴纸一样，方便以后找</small></label>
+                <div class="tag-picker">
+                  <button class="tag-option active" type="button">家常</button>
+                  <button class="tag-option active" type="button">快手</button>
+                  <button class="tag-option active" type="button">下饭</button>
+                  <button class="tag-option" type="button">早餐</button>
+                  <button class="tag-option" type="button">招待</button>
+                  <button class="tag-option" type="button">清淡</button>
+                </div>
+              </div>
+              <div class="field">
+                <label>新增标签</label>
+                <div class="tag-add-row">
+                  <input placeholder="例如：孩子爱吃" />
+                  <button class="soft-action" type="button">添加</button>
+                </div>
+              </div>
+              <button class="primary-action wide" type="button">保存这道菜</button>
             </div>
           </div>
         </article>
@@ -634,7 +1161,166 @@
             </div>
           </div>
         </article>
+
+        <article class="screen">
+          <div class="screen-title">
+            <h2>空状态：第一次打开</h2>
+            <span>让用户知道第一步做什么</span>
+          </div>
+          <div class="screen-body">
+            <div class="empty-state">
+              <div>
+                <h3>还没有菜谱</h3>
+                <p>先把最近想做的一道菜收进本子。只写菜名也可以，之后再慢慢补。</p>
+                <button class="primary-action" type="button">记一道菜</button>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <article class="screen">
+          <div class="screen-title">
+            <h2>无搜索结果</h2>
+            <span>数据少时很常见，要给出口</span>
+          </div>
+          <div class="screen-body">
+            <input class="search" value="牛肉" />
+            <div class="empty-state" style="margin-top: 16px">
+              <div>
+                <h3>没找到“牛肉”</h3>
+                <p>可以换个食材、标签试试；也可以直接把这道想做的菜记下来。</p>
+                <button class="primary-action" type="button">记一道新菜</button>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <article class="screen">
+          <div class="screen-title">
+            <h2>图片上传状态</h2>
+            <span>Supabase Storage 需要明确反馈</span>
+          </div>
+          <div class="screen-body">
+            <div class="form-grid">
+              <div class="upload-box">
+                <div class="upload-row">
+                  <div class="upload-thumb"></div>
+                  <div>
+                    <strong>正在压缩并上传照片</strong>
+                    <p class="item-meta">cover-0427.webp · 64%</p>
+                    <div class="progress"><span></span></div>
+                  </div>
+                </div>
+              </div>
+              <div class="upload-box">
+                <div class="upload-row">
+                  <div class="upload-thumb"></div>
+                  <div>
+                    <strong>上传失败</strong>
+                    <p class="item-meta">网络不稳定，照片还没有保存到云端。</p>
+                    <div class="random-actions">
+                      <button class="pill-button main" type="button">重试</button>
+                      <button class="pill-button" type="button">移除</button>
+                    </div>
+                  </div>
+                </div>
+                <div class="error-note">保存菜谱前，失败的图片不会写入记录。</div>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <article class="screen">
+          <div class="screen-title">
+            <h2>移动端首页</h2>
+            <span>厨房里更可能用手机</span>
+          </div>
+          <div class="screen-body">
+            <div class="mobile-frame">
+              <div class="mobile-screen">
+                <div class="mobile-inner">
+                  <div class="mobile-top">
+                    <strong>麦麦手记</strong>
+                    <button class="mobile-cta" type="button">记一道菜</button>
+                  </div>
+                  <input class="search" placeholder="今天想找哪道菜？" />
+                  <div class="quick mobile-quick">
+                    <button class="active" type="button">
+                      <strong>最近</strong>
+                      <span>刚做过</span>
+                    </button>
+                    <button type="button">
+                      <strong>想做</strong>
+                      <span>等开火</span>
+                    </button>
+                    <button type="button">
+                      <strong>随机</strong>
+                      <span>挑一道</span>
+                    </button>
+                    <button type="button">
+                      <strong>全部</strong>
+                      <span>找菜谱</span>
+                    </button>
+                  </div>
+                  <div class="section-head">
+                    <h3>最近做过</h3>
+                  </div>
+                  <div class="record-list">
+                    <div class="record-item">
+                      <div class="photo"></div>
+                      <div>
+                        <p class="item-title">番茄炒蛋</p>
+                        <p class="item-meta">昨天 · 糖少一点更清爽</p>
+                      </div>
+                    </div>
+                    <div class="record-item">
+                      <div class="photo"></div>
+                      <div>
+                        <p class="item-title">葱油拌面</p>
+                        <p class="item-meta">周六 · 葱要再煸久一点</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </article>
       </section>
     </main>
+    <script>
+      const quickButtons = document.querySelectorAll("[data-home-view]");
+      const panels = document.querySelectorAll("[data-home-panel]");
+      const searchInput = document.querySelector("[data-search-input]");
+      const searchPanel = document.querySelector("[data-search-panel]");
+      const searchWord = document.querySelector("[data-search-word]");
+      const homeDefaults = document.querySelectorAll("[data-home-default]");
+
+      quickButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+          const next = button.getAttribute("data-home-view");
+
+          quickButtons.forEach((item) => {
+            item.classList.toggle("active", item === button);
+          });
+
+          panels.forEach((panel) => {
+            panel.classList.toggle("active", panel.getAttribute("data-home-panel") === next);
+          });
+        });
+      });
+
+      searchInput.addEventListener("input", () => {
+        const keyword = searchInput.value.trim();
+        const hasKeyword = keyword.length > 0;
+
+        searchPanel.classList.toggle("active", hasKeyword);
+        searchWord.textContent = keyword || "番茄";
+
+        homeDefaults.forEach((item) => {
+          item.style.display = hasKeyword ? "none" : "";
+        });
+      });
+    </script>
   </body>
 </html>
